@@ -844,17 +844,45 @@
     ["Round of 32", 16], ["Round of 16", 8], ["Quarter-finals", 4],
     ["Semi-finals", 2], ["Third-place play-off", 1], ["Final", 1]
   ];
-  // ESPN returns events id-ordered = the official match number within each round.
-  // The vertical order that makes the tree connectors join the RIGHT matches is fixed
-  // by the bracket layout (derived from ESPN's "Round of 32 N Winner" feeder labels:
-  // R16#1 ← R32 #1 & #3, etc.). These are constant for the whole tournament.
-  const TREE_ORDER = {
-    r32: [1, 3, 2, 5, 11, 12, 9, 10, 4, 6, 7, 8, 14, 16, 13, 15],
-    r16: [1, 2, 5, 6, 3, 4, 7, 8],
-    qf:  [1, 2, 3, 4],
-    sf:  [1, 2],
-    final: [1]
+  // ESPN's own knockout feeder labels are INCONSISTENT with the real FIFA draw
+  // (its Round-of-16 pairings produce ties that don't exist), so we hardcode the
+  // official 2026 bracket (FIFA match numbers 73–104, per Wikipedia/Sky) and map
+  // ESPN's Round-of-32 events onto it by team. The R32 display order below makes the
+  // tree connectors join the correct matches (e.g. France & Morocco can meet in the QF).
+  const R32_TEAM_MATCH = {
+    "South Africa": 73, "Canada": 73, "Germany": 74, "Paraguay": 74,
+    "Netherlands": 75, "Morocco": 75, "Brazil": 76, "Japan": 76,
+    "France": 77, "Sweden": 77, "Ivory Coast": 78, "Norway": 78,
+    "Mexico": 79, "Ecuador": 79, "England": 80, "Congo DR": 80,
+    "United States": 81, "Bosnia-Herzegovina": 81, "Belgium": 82, "Senegal": 82,
+    "Portugal": 83, "Croatia": 83, "Spain": 84, "Austria": 84,
+    "Switzerland": 85, "Algeria": 85, "Argentina": 86, "Cape Verde": 86,
+    "Colombia": 87, "Ghana": 87, "Australia": 88, "Egypt": 88
   };
+  // R32 matches in bracket display order (top → bottom). Consecutive pairs feed each
+  // R16; consecutive R16s feed each QF; etc. (standard adjacency on this order).
+  const R32_DISPLAY = [73, 75, 74, 77, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87];
+  // Positional order of ESPN's id-sorted events per later round — used only to attach
+  // each box's date/venue; the matchups themselves come from the structure above.
+  const EVT_ORDER = { r16: [1, 2, 5, 6, 3, 4, 7, 8], qf: [1, 2, 3, 4], sf: [1, 2], final: [1] };
+
+  function r32MatchMap(rounds) {            // FIFA R32 match number → ESPN event
+    const map = {};
+    for (const ev of (rounds[0].events || [])) {
+      for (const x of (ev.competitions[0].competitors || [])) {
+        const m = R32_TEAM_MATCH[(x.team || {}).displayName];
+        if (m) { map[m] = ev; break; }
+      }
+    }
+    return map;
+  }
+  function shortMatch(ev) {                  // "RSA/CAN" style label for a R32 tie
+    if (!ev) return "TBD";
+    const cs = ev.competitions[0].competitors || [];
+    const nm = x => { const tt = x.team || {}; return tt.abbreviation || tt.shortDisplayName || tt.displayName || "?"; };
+    const h = cs.find(x => x.homeAway === "home") || cs[0], a = cs.find(x => x.homeAway === "away") || cs[1];
+    return nm(h) + "/" + nm(a);
+  }
 
   const shortenName = n => n
     .replace(/Round of 32/g, "R32").replace(/Round of 16/g, "R16")
@@ -1006,23 +1034,41 @@
       return null; // not played, or live and level → no projected winner yet
     }
 
-    const disp = (round, order) => order.map(n => round.events[n - 1]).filter(Boolean);
-    const r32M = disp(rounds[0], TREE_ORDER.r32).map(ev => {
+    // Real fixtures indexed by their team pair — once two teams actually advance, their
+    // real match (with score) exists in ESPN's data and we attach it by teams, regardless
+    // of ESPN's broken placeholder structure. Falls back to a positional event for dates.
+    const koByPair = {};
+    for (const r of rounds)
+      for (const ev of (r.events || [])) {
+        const cs = ev.competitions[0].competitors || [];
+        if (cs.length === 2 && cs[0].team && cs[1].team && cs[0].team.logo && cs[1].team.logo)
+          koByPair[[cs[0].team.id, cs[1].team.id].sort().join("|")] = ev;
+      }
+    const eventFor = (home, away, round, idx) => {
+      if (home && away && home.id && away.id) {
+        const ev = koByPair[[home.id, away.id].sort().join("|")];
+        if (ev) return ev;
+      }
+      return (round.events || [])[idx]; // fallback: positional event for date/venue
+    };
+
+    const map = r32MatchMap(rounds);
+    const r32M = R32_DISPLAY.map(m => map[m]).filter(Boolean).map(ev => {
       const cs = ev.competitions[0].competitors || [];
       return { ev, home: resolveR32(cs.find(x => x.homeAway === "home") || cs[0]),
                     away: resolveR32(cs.find(x => x.homeAway === "away") || cs[1]) };
     });
-    const advance = (winners, round, order) => disp(round, order)
-      .map((ev, i) => ({ ev, home: winners[2 * i], away: winners[2 * i + 1] }));
+    const advance = (winners, round, order) => order.map((idn, j) =>
+      ({ ev: eventFor(winners[2 * j], winners[2 * j + 1], round, idn - 1), home: winners[2 * j], away: winners[2 * j + 1] }));
 
     const w32 = r32M.map(winnerOf);
-    const r16M = advance(w32, rounds[1], TREE_ORDER.r16);
+    const r16M = advance(w32, rounds[1], EVT_ORDER.r16);
     const w16 = r16M.map(winnerOf);
-    const qfM = advance(w16, rounds[2], TREE_ORDER.qf);
+    const qfM = advance(w16, rounds[2], EVT_ORDER.qf);
     const wqf = qfM.map(winnerOf);
-    const sfM = advance(wqf, rounds[3], TREE_ORDER.sf);
+    const sfM = advance(wqf, rounds[3], EVT_ORDER.sf);
     const wsf = sfM.map(winnerOf);
-    const finalM = advance(wsf, rounds[5], TREE_ORDER.final);
+    const finalM = advance(wsf, rounds[5], EVT_ORDER.final);
 
     const loserOf = m => { if (!m || !m.home || !m.away) return null; const w = winnerOf(m); return w ? (w === m.home ? m.away : m.home) : null; };
     const thirdEv = rounds[4].events[0];
@@ -1084,22 +1130,30 @@
         : "";
       note = t("noteProjected");
     } else {
-      const pick = (round, order) => order.map(n => round.events[n - 1]).filter(Boolean);
-      const colDefs = [
-        { name: rounds[0].name, evs: pick(rounds[0], TREE_ORDER.r32) },
-        { name: rounds[1].name, evs: pick(rounds[1], TREE_ORDER.r16) },
-        { name: rounds[2].name, evs: pick(rounds[2], TREE_ORDER.qf) },
-        { name: rounds[3].name, evs: pick(rounds[3], TREE_ORDER.sf) },
-        { name: rounds[5].name, evs: pick(rounds[5], TREE_ORDER.final) }
-      ];
-      cols = colDefs.map(c => {
-        const matches = c.evs.map(ev => `<div class="match">${gameBox(ev)}</div>`).join("")
-          || `<div class="match"><div class="game"><div class="g-row placeholder"><span class="nologo"></span><span class="nm">${t("tbd")}</span></div></div></div>`;
-        return `<div class="round-col"><div class="rc-title">${roundName(c.name)}</div><div class="matches">${matches}</div></div>`;
-      }).join("");
+      // Confirmed view, built on the real bracket structure. R32 shows the actual
+      // matchups; R16 shows which two R32 winners feed each tie; QF+ are placeholders.
+      const map = r32MatchMap(rounds);
+      const tbdRow = `<div class="g-row placeholder"><span class="nologo"></span><span class="nm">${t("tbd")}</span></div>`;
+      const feederRow = m => `<div class="g-row placeholder"><span class="nologo"></span><span class="nm">› ${shortMatch(map[m])}</span></div>`;
+      const placeholderBox = (ev, inner) => `<div class="game">${inner}${ev ? metaHtml(ev) : ""}</div>`;
+
+      const colR32 = `<div class="round-col"><div class="rc-title">${roundName(rounds[0].name)}</div><div class="matches">${
+        R32_DISPLAY.map(m => map[m] ? `<div class="match">${gameBox(map[m])}</div>` : "").join("")
+      }</div></div>`;
+
+      const r16ev = rounds[1].events || [];
+      const colR16 = `<div class="round-col"><div class="rc-title">${roundName(rounds[1].name)}</div><div class="matches">${
+        EVT_ORDER.r16.map((idn, j) => `<div class="match">${placeholderBox(r16ev[idn - 1], feederRow(R32_DISPLAY[2 * j]) + feederRow(R32_DISPLAY[2 * j + 1]))}</div>`).join("")
+      }</div></div>`;
+
+      const tbdCol = (round, order) => `<div class="round-col"><div class="rc-title">${roundName(round.name)}</div><div class="matches">${
+        order.map((idn, j) => `<div class="match">${placeholderBox((round.events || [])[idn - 1] || (round.events || [])[j], tbdRow + tbdRow)}</div>`).join("")
+      }</div></div>`;
+
+      cols = colR32 + colR16 + tbdCol(rounds[2], EVT_ORDER.qf) + tbdCol(rounds[3], EVT_ORDER.sf) + tbdCol(rounds[5], EVT_ORDER.final);
       const third = rounds[4];
       thirdHtml = (third && third.events.length)
-        ? `<div class="third-place"><div class="rc-title">🥉 ${roundName(third.name)}</div>${gameBox(third.events[0])}</div>`
+        ? `<div class="third-place"><div class="rc-title">🥉 ${roundName(third.name)}</div>${placeholderBox(third.events[0], tbdRow + tbdRow)}</div>`
         : "";
       note = t("noteConfirmed");
     }
