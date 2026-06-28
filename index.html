@@ -362,7 +362,7 @@
     <div class="rules" id="translitGuideWrap" style="display:none">
       <details class="acc translit-guide">
         <summary data-i18n="translitSum">🗣️ Learn to read Darija — pronunciation guide</summary>
-        <div class="acc-body">
+        <div class="acc-body gloss-skip">
           <p>When <b>Darija (العربية - دارجة)</b> is selected, every Darija word in the page is <span class="gloss" data-gloss="🗣 dāba&#10;⌨ daba&#10;→ now">underlined</span> — hover (or tap) it to see its pronunciation and meaning. Each tooltip shows three lines:</p>
           <p class="legend-key">
             <span>🗣 <b>Academic</b> — scholarly phonemic transliteration (most accurate).</span><br>
@@ -961,7 +961,7 @@
   function glossNode(node) {
     const p = node.parentNode;
     if (!p || p.nodeType !== 1 || GLOSS_SKIP[p.nodeName]) return;
-    if (p.closest(".gloss, .translit-guide")) return;
+    if (p.closest(".gloss, .gloss-skip")) return;
     const html = glossifyText(node.nodeValue);
     if (html == null) return;
     const tpl = document.createElement("template");
@@ -971,7 +971,7 @@
   function glossRoot(root) {
     if (root.nodeType === 3) { glossNode(root); return; }
     if (root.nodeType !== 1 || GLOSS_SKIP[root.nodeName]) return;
-    if (root.closest(".gloss, .translit-guide")) return;
+    if (root.closest(".gloss, .gloss-skip")) return;
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const nodes = []; let n;
     while ((n = walker.nextNode())) nodes.push(n);
