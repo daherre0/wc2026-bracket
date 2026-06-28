@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>World Cup 2026 — Third-Place Standings (Live)</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --panel: #121829;
+    --panel-2: #1a2138;
+    --line: #25304d;
+    --text: #e8edf7;
+    --muted: #8b97b3;
+    --accent: #00d27a;
+    --accent-dim: #0c3a2a;
+    --gold: #f5c542;
+    --danger: #ff5d6c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 50% -10%, #16203a 0%, var(--bg) 60%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 16px 64px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 8px; }
+  h1 {
+    font-size: clamp(22px, 4vw, 32px);
+    margin: 0 0 4px;
+    letter-spacing: -0.5px;
+  }
+  .sub { color: var(--muted); font-size: 14px; margin: 0; }
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin: 18px 0 22px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 0 rgba(0,210,122,0.6);
+    animation: pulse 2s infinite;
+    display: inline-block;
+  }
+  .dot.error { background: var(--danger); animation: none; box-shadow: none; }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0,210,122,0.55); }
+    70% { box-shadow: 0 0 0 8px rgba(0,210,122,0); }
+    100% { box-shadow: 0 0 0 0 rgba(0,210,122,0); }
+  }
+  button {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  button:hover { background: #222c47; border-color: #3a486e; }
+  .legend {
+    text-align: center; font-size: 12.5px; color: var(--muted);
+    margin: 0 0 14px;
+  }
+  .legend b { color: var(--accent); }
+  .live-banner {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin: 0 0 16px;
+  }
+  .live-banner h2 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .6px;
+    color: var(--muted); margin: 0 0 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .live-match {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 7px 0; border-top: 1px solid rgba(37,48,77,.5);
+    font-size: 14px;
+  }
+  .live-match:first-of-type { border-top: none; }
+  .live-match .teams { display: flex; align-items: center; gap: 8px; }
+  .live-match .score { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .live-pill {
+    font-size: 10px; font-weight: 700; color: #fff;
+    background: var(--danger); border-radius: 20px; padding: 2px 8px;
+    text-transform: uppercase; letter-spacing: .4px;
+    animation: pulse-red 1.6s infinite;
+  }
+  .live-pill.scheduled { background: var(--panel-2); color: var(--muted); animation: none; }
+  .live-pill.done { background: #2a3550; color: var(--muted); animation: none; }
+  @keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(255,93,108,.5); }
+    70% { box-shadow: 0 0 0 7px rgba(255,93,108,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,93,108,0); }
+  }
+  #countdown { color: var(--accent); font-variant-numeric: tabular-nums; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--panel);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  }
+  thead th {
+    background: var(--panel-2);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 12px 8px;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+  }
+  thead th.team-col, tbody td.team-col { text-align: left; }
+  tbody td {
+    padding: 11px 8px;
+    text-align: center;
+    border-bottom: 1px solid rgba(37,48,77,0.55);
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr.qualify { background: linear-gradient(90deg, var(--accent-dim) 0%, rgba(12,58,42,0) 60%); }
+  tbody tr.qualify td.rank-col { color: var(--accent); font-weight: 700; }
+  tbody tr.cutline td { border-bottom: 2px dashed var(--gold); }
+  .team-cell { display: flex; align-items: center; gap: 10px; }
+  .team-cell img { width: 22px; height: 22px; object-fit: contain; border-radius: 3px; }
+  .team-name { font-weight: 600; }
+  .group-tag {
+    font-size: 11px; color: var(--muted);
+    background: var(--panel-2); padding: 2px 7px; border-radius: 5px;
+  }
+  .pts { font-weight: 700; }
+  .msg { text-align: center; padding: 40px 16px; color: var(--muted); }
+  .qbadge {
+    font-size: 10px; color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 20px; padding: 1px 8px; margin-left: 6px; vertical-align: middle;
+  }
+
+  /* ---- Source toggle (ESPN official vs live-calculated) ---- */
+  .src-toggle { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; }
+  .src-label { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+  .src-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .src-btn {
+    background: var(--panel); color: var(--muted); border: 0;
+    padding: 6px 13px; font-size: 12.5px; cursor: pointer; transition: background .15s, color .15s;
+  }
+  .src-btn + .src-btn { border-left: 1px solid var(--line); }
+  .src-btn.active { background: var(--accent-dim); color: var(--accent); font-weight: 700; }
+  .src-btn:not(.active):hover { background: var(--panel-2); color: var(--text); }
+  .src-note { font-size: 11.5px; color: var(--muted); flex-basis: 100%; text-align: center; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 20px; }
+  footer a { color: var(--muted); }
+
+  /* ---- Standings table is full width; tighten its columns on phones ---- */
+  @media (max-width: 880px) {
+    #container { overflow-x: auto; }
+    thead th, tbody td { padding-left: 3px; padding-right: 3px; font-size: 12.5px; }
+    thead th:first-child, tbody td:first-child { padding-left: 8px; }
+    thead th:last-child, tbody td:last-child { padding-right: 8px; }
+    .team-cell { gap: 6px; }
+    .team-cell img { width: 17px; height: 17px; }
+    .qbadge { padding: 1px 5px; margin-left: 4px; }
+    .group-tag { padding: 2px 5px; }
+  }
+
+  /* ---- Knockout bracket: left-to-right tournament tree ---- */
+  .bracket-acc .acc-body { padding: 12px 12px 16px; }
+  .bracket-scroll { overflow-x: auto; padding-bottom: 6px; }
+  .bracket-tree { display: flex; min-width: 900px; min-height: 1640px; }
+  .round-col { flex: 1 1 0; min-width: 168px; display: flex; flex-direction: column; }
+  .rc-title {
+    text-align: center; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; color: var(--muted);
+    padding-bottom: 7px; margin-bottom: 4px; border-bottom: 1px solid var(--line);
+  }
+  .round-col > .matches { flex: 1; display: flex; flex-direction: column; }
+  .match { flex: 1 1 0; display: flex; align-items: center; position: relative; }
+  .round-col:not(:last-child) .match { padding-right: 18px; }
+
+  .game {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 7px; padding: 5px 7px;
+  }
+  .game.live { border-color: var(--danger); box-shadow: 0 0 0 1px rgba(255,93,108,.25); }
+  .g-row { display: flex; align-items: center; gap: 5px; padding: 1.5px 0; font-size: 11.5px; }
+  .g-row img { width: 14px; height: 14px; object-fit: contain; flex: 0 0 14px; }
+  .g-row .nologo { width: 14px; height: 14px; flex: 0 0 14px; border-radius: 50%; background: var(--panel); }
+  .g-row .nm {
+    flex: 1 1 auto; min-width: 0; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; color: var(--text);
+  }
+  .g-row .sc { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); }
+  .g-row.placeholder .nm { color: var(--muted); font-style: italic; }
+  .g-row.win .nm { font-weight: 700; }
+  .g-row.win .sc { color: var(--accent); }
+  .g-foot { display: flex; justify-content: flex-end; margin-top: 2px; }
+  .g-stat { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
+  .g-stat.live { color: var(--danger); }
+  .g-stat.done { color: var(--muted); }
+  .g-stat.pre { color: var(--muted); font-weight: 600; text-transform: none; }
+  .g-meta { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--line); }
+  .g-when, .g-venue {
+    font-size: 9.5px; color: var(--muted); line-height: 1.45;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .bracket-note { font-size: 11px; color: var(--muted); text-align: center; margin: 0 0 10px; }
+  /* projected (hypothetical) teams */
+  .proj-game { border-style: dashed; }
+  .g-row.proj .nm { color: #6fa8ff; font-style: italic; }
+  .g-stat.proj { color: #6fa8ff; }
+
+  /* connector lines: each feeder match draws an elbow into the gap on its right */
+  .round-col:not(:last-child) .match::after {
+    content: ""; position: absolute; right: 0; width: 18px; height: 50%;
+    border-right: 2px solid var(--line);
+  }
+  .round-col:not(:last-child) .match:nth-child(odd)::after {
+    top: 50%; border-top: 2px solid var(--line);
+  }
+  .round-col:not(:last-child) .match:nth-child(even)::after {
+    bottom: 50%; border-bottom: 2px solid var(--line);
+  }
+
+  .third-place { max-width: 240px; margin: 16px auto 2px; }
+  .third-place .rc-title { border: none; padding-bottom: 4px; }
+
+  /* ---- Tooltips (pure CSS, work on any element with data-tip) ---- */
+  [data-tip] { position: relative; }
+  th[data-tip], .qbadge[data-tip], .group-tag[data-tip], .live-pill[data-tip], .dot[data-tip] { cursor: help; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute; left: 50%; bottom: calc(100% + 9px);
+    transform: translateX(-50%);
+    width: max-content; max-width: 220px;
+    background: #0c1322; color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 12px; font-weight: 400; letter-spacing: 0;
+    text-transform: none; white-space: normal; text-align: center; line-height: 1.4;
+    z-index: 60; box-shadow: 0 10px 30px rgba(0,0,0,.55); pointer-events: none;
+  }
+  [data-tip]:hover::before {
+    content: ""; position: absolute; left: 50%; bottom: calc(100% + 4px);
+    transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: var(--line);
+    z-index: 60; pointer-events: none;
+  }
+  /* keep edge-column / right-aligned tooltips from clipping off-screen */
+  thead th:first-child[data-tip]:hover::after { left: 0; transform: none; }
+  thead th:last-child[data-tip]:hover::after { left: auto; right: 0; transform: none; }
+  .live-pill[data-tip]:hover::after { left: auto; right: 0; transform: none; }
+  .live-pill[data-tip]:hover::before { display: none; }
+
+  /* ---- Accordion (native <details>, no JS) ---- */
+  .rules { margin: 0 0 18px; }
+  details.acc {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; margin-bottom: 8px; overflow: hidden;
+  }
+  details.acc > summary {
+    cursor: pointer; list-style: none; padding: 12px 16px;
+    font-size: 13.5px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; gap: 10px; user-select: none;
+  }
+  details.acc > summary::-webkit-details-marker { display: none; }
+  details.acc > summary::before {
+    content: "▸"; color: var(--muted); font-size: 12px; transition: transform .15s;
+  }
+  details.acc[open] > summary::before { transform: rotate(90deg); }
+  details.acc > summary:hover { background: var(--panel-2); }
+  .acc-body { padding: 2px 18px 16px 40px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+  .acc-body ol, .acc-body ul { margin: 6px 0; padding-left: 18px; }
+  .acc-body li { margin: 5px 0; }
+  .acc-body b { color: var(--text); }
+  .key-grid { display: grid; grid-template-columns: auto 1fr; gap: 7px 16px; align-items: baseline; }
+  .key-grid .k {
+    color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums;
+    text-align: right; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>🏆 World Cup 2026 — Third-Place Standings</h1>
+      <p class="sub">Ranking of the third-placed team in each group · live</p>
+    </header>
+
+    <div class="status-bar">
+      <span><span class="dot" id="dot" data-tip="Live data feed status" title="Live data feed status"></span> <span id="status">Loading…</span></span>
+      <span id="updated"></span>
+      <span>Next update in <span id="countdown">—</span>s</span>
+      <button id="refresh">↻ Refresh now</button>
+    </div>
+
+    <div class="live-banner" id="liveBanner" style="display:none">
+      <h2><span class="dot" id="liveDot" data-tip="Green = a match is live now; red = none live" title="Green = a match is live now; red = none live"></span> Matches today</h2>
+      <div id="liveMatches"></div>
+    </div>
+
+    <p class="legend">
+      The <b>top 8</b> of the 12 third-placed teams advance to the Round of 32.
+      The dashed gold line is the qualification cut-off. Hover any abbreviation for what it means.
+    </p>
+
+    <div class="src-toggle">
+      <span class="src-label">Third-place table:</span>
+      <span class="src-seg">
+        <button class="src-btn active" id="srcEspn" data-tip="Official ranking exactly as ESPN publishes it" title="ESPN official standings">ESPN official</button>
+        <button class="src-btn" id="srcCalc" data-tip="Recomputed live from match results, including in-progress games" title="Calculated from live results">Live calculated</button>
+      </span>
+      <span class="src-note" id="srcNote">Official ranking exactly as ESPN publishes it.</span>
+    </div>
+
+    <div id="container">
+      <div class="msg">Fetching live data…</div>
+    </div>
+
+    <div class="rules">
+      <details class="acc bracket-acc" open>
+        <summary>🗺️ Knockout bracket — tournament tree</summary>
+        <div class="acc-body">
+          <div class="src-toggle" style="margin-bottom: 12px">
+            <span class="src-label">Empty slots:</span>
+            <span class="src-seg">
+              <button class="src-btn active" id="brkConfirmed" data-tip="Show only confirmed teams; leave undecided slots as placeholders" title="Confirmed only">Confirmed</button>
+              <button class="src-btn" id="brkProjected" data-tip="Fill empty slots from live standings and predict each winner (better record, or the current live leader)" title="Projected from live results">Projected (live)</button>
+            </span>
+          </div>
+          <div id="bracket"><div class="msg">Loading bracket…</div></div>
+        </div>
+      </details>
+    </div>
+
+    <div class="rules">
+      <details class="acc">
+        <summary>How teams are classified &amp; qualify</summary>
+        <div class="acc-body">
+          <ul>
+            <li>The 48 teams are split into <b>12 groups of 4</b> (A–L). Each team plays the other three once.</li>
+            <li>Match points: <b>3 for a win, 1 for a draw, 0 for a loss</b>.</li>
+            <li>The <b>top 2 of every group</b> qualify automatically → <b>24 teams</b>.</li>
+            <li>The <b>8 best third-placed teams</b> across all 12 groups also advance → completing the <b>32-team Round of 32</b>.</li>
+            <li><b>This table ranks those 12 third-placed teams.</b> The 8 above the gold line are currently in qualifying positions (marked <span class="qbadge" style="cursor:default">Q</span>); the bottom 4 are eliminated as it stands.</li>
+            <li>Standings update live, so positions can change while matches are in progress.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="acc">
+        <summary>Tiebreakers (applied in order)</summary>
+        <div class="acc-body">
+          When teams are level, FIFA separates them by:
+          <ol>
+            <li>Most <b>points</b></li>
+            <li>Best <b>goal difference</b> (GF − GA)</li>
+            <li>Most <b>goals scored</b> (GF)</li>
+            <li>Then official criteria: head-to-head record, disciplinary/fair-play points, and finally drawing of lots.</li>
+          </ol>
+          This page ranks by the first three; the order <b>within</b> each group comes straight from ESPN's official standings.
+        </div>
+      </details>
+
+      <details class="acc">
+        <summary>Column key (abbreviations)</summary>
+        <div class="acc-body">
+          <div class="key-grid">
+            <span class="k">#</span><span>Rank among the 12 third-placed teams</span>
+            <span class="k">Grp</span><span>Group the team finished 3rd in</span>
+            <span class="k">P</span><span>Matches played</span>
+            <span class="k">W</span><span>Wins</span>
+            <span class="k">D</span><span>Draws</span>
+            <span class="k">L</span><span>Losses</span>
+            <span class="k">GF</span><span>Goals for (scored)</span>
+            <span class="k">GA</span><span>Goals against (conceded)</span>
+            <span class="k">GD</span><span>Goal difference (GF − GA)</span>
+            <span class="k">Pts</span><span>Points (3 win / 1 draw / 0 loss)</span>
+            <span class="k">Q</span><span>Currently in a top-8 qualifying spot</span>
+            <span class="k">FT</span><span>Full time — match finished</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="acc">
+        <summary>Reading the bracket</summary>
+        <div class="acc-body">
+          <ul>
+            <li>The bracket lists every knockout tie. A real team appears once its group result is final; until then the slot shows a placeholder.</li>
+            <li>Placeholders use the feeding round: <b>R32 / R16 / QF / SF</b>, plus <b>W</b> (winner) or <b>L</b> (loser). Example: <b>R32 1 W</b> = the winner of Round-of-32 match 1.</li>
+            <li>Tie status: a red minute = <b>live</b>, <b>FT</b> = finished (winner in bold), a date = scheduled kick-off. Italic grey names are slots whose team isn't decided yet.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+
+    <footer>
+      Auto-refreshes every 20s · Data: <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener">ESPN</a>
+      · Tiebreakers: points → goal difference → goals scored
+    </footer>
+  </div>
+
+<script>
+  // ESPN's public site API carries the real tournament, is keyless, and sends
+  // Access-Control-Allow-Origin:* so a plain file:// page can call it directly.
+  // (TheSportsDB's free tier returned fictional fixtures, so we don't use it.)
+  const STANDINGS_URL = "https://site.api.espn.com/apis/v2/sports/soccer/fifa.world/standings?season=2026";
+  const SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
+  const QUALIFY_SPOTS = 8; // best 8 of 12 third-placed teams reach the Round of 32
+  const REFRESH_MS = 20000;
+
+  function setStatus(text, isError) {
+    document.getElementById("status").textContent = text;
+    document.getElementById("dot").classList.toggle("error", !!isError);
+  }
+
+  function todayYYYYMMDD() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, "0");
+    return "" + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate());
+  }
+
+  // ---- Standings: pull each group's 3rd-placed team, then rank them ----------
+  function statOf(entry, name) {
+    const s = (entry.stats || []).find(s => s.name === name);
+    return s ? Number(s.value) : 0;
+  }
+  function teamLogo(team) {
+    if (team.logos && team.logos[0] && team.logos[0].href) return team.logos[0].href;
+    return team.logo || "";
+  }
+
+  const groupLetter = g => (g.name || g.abbreviation || "").replace(/^Group\s*/i, "");
+  const byThird = (a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.team.localeCompare(b.team);
+
+  async function fetchStandingsGroups() {
+    const res = await fetch(STANDINGS_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("standings HTTP " + res.status);
+    const data = await res.json();
+    return data.children || [];
+  }
+
+  // Mode 1 — ESPN official: each group's 3rd-placed team, exactly as ESPN ranks them.
+  function officialThirds(groups) {
+    const thirds = [];
+    for (const g of groups) {
+      const letter = groupLetter(g);
+      const teams = ((g.standings && g.standings.entries) || []).map(e => ({
+        team: e.team.shortDisplayName || e.team.displayName,
+        badge: teamLogo(e.team),
+        group: letter,
+        rank: statOf(e, "rank"),
+        played: statOf(e, "gamesPlayed"),
+        win: statOf(e, "wins"),
+        draw: statOf(e, "ties"),
+        loss: statOf(e, "losses"),
+        gf: statOf(e, "pointsFor"),
+        ga: statOf(e, "pointsAgainst"),
+        gd: statOf(e, "pointDifferential"),
+        pts: statOf(e, "points")
+      }));
+      teams.sort((a, b) => (a.rank || 99) - (b.rank || 99)); // ESPN's own order
+      if (teams[2]) thirds.push(teams[2]);
+    }
+    thirds.sort(byThird);
+    return thirds;
+  }
+
+  // Mode 2 — Live calculated: rebuild the group tables from actual match results
+  // (counting finished AND in-progress games), then take each group's 3rd place.
+  const GROUP_STAGE_URL = SCOREBOARD_URL + "?dates=20260611-20260627";
+  async function loadGroupResults() {
+    const res = await fetch(GROUP_STAGE_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("group results HTTP " + res.status);
+    const data = await res.json();
+    return data.events || [];
+  }
+
+  function teamIndex(groups) {
+    const idx = {};
+    for (const g of groups) {
+      const letter = groupLetter(g);
+      for (const e of (g.standings && g.standings.entries) || []) {
+        idx[e.team.id] = { group: letter, name: e.team.shortDisplayName || e.team.displayName, logo: teamLogo(e.team) };
+      }
+    }
+    return idx;
+  }
+
+  // Build ranked group tables from results (finished + in-progress). Returns the tables,
+  // an id->team index (for records), each group's 3rd place, and the 8 that qualify.
+  function computeGroups(groups, events) {
+    const idx = teamIndex(groups);
+    const tbl = {};
+    const ensure = (grp, id) => {
+      const G = tbl[grp] || (tbl[grp] = {});
+      if (!G[id]) {
+        const m = idx[id] || {};
+        G[id] = { id, team: m.name || "?", badge: m.logo || "", group: grp,
+                  played: 0, win: 0, draw: 0, loss: 0, gf: 0, ga: 0, pts: 0 };
+      }
+      return G[id];
+    };
+    for (const ev of events) {
+      const cs = ((ev.competitions || [])[0] || {}).competitors || [];
+      const home = cs.find(x => x.homeAway === "home") || cs[0];
+      const away = cs.find(x => x.homeAway === "away") || cs[1];
+      if (!home || !away) continue;
+      const stateName = ((ev.status || {}).type || {}).state;
+      if (stateName !== "in" && stateName !== "post") continue; // only games with a result
+      const hs = parseInt(home.score, 10), as = parseInt(away.score, 10);
+      if (isNaN(hs) || isNaN(as)) continue;
+      const grp = (idx[home.team.id] || {}).group || (idx[away.team.id] || {}).group;
+      if (!grp) continue;
+      const h = ensure(grp, home.team.id), a = ensure(grp, away.team.id);
+      h.played++; a.played++;
+      h.gf += hs; h.ga += as; a.gf += as; a.ga += hs;
+      if (hs > as) { h.win++; a.loss++; h.pts += 3; }
+      else if (hs < as) { a.win++; h.loss++; a.pts += 3; }
+      else { h.draw++; a.draw++; h.pts++; a.pts++; }
+    }
+    const tables = {}, byId = {};
+    for (const grp of Object.keys(tbl)) {
+      const teams = Object.values(tbl[grp]).map(t => ({ ...t, gd: t.gf - t.ga }));
+      teams.sort(byThird);
+      teams.forEach((t, i) => { t.rank = i + 1; byId[t.id] = t; });
+      tables[grp] = teams;
+    }
+    const thirds = Object.keys(tables).sort().map(g => tables[g][2]).filter(Boolean).slice().sort(byThird);
+    return { tables, byId, thirds, qualified: thirds.slice(0, QUALIFY_SPOTS) };
+  }
+
+  function calcThirds(groups, events) { return computeGroups(groups, events).thirds; }
+
+  // ---- Source toggle state ----
+  function lsGet(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  const thirdState = { mode: lsGet("wc-third-src", "espn"), official: [], calc: [] };
+
+  function renderThird() {
+    render(thirdState.mode === "calc" ? thirdState.calc : thirdState.official);
+    document.getElementById("srcEspn").classList.toggle("active", thirdState.mode === "espn");
+    document.getElementById("srcCalc").classList.toggle("active", thirdState.mode === "calc");
+    document.getElementById("srcNote").textContent = thirdState.mode === "calc"
+      ? "Computed live from match results, including in-progress games — may differ from ESPN."
+      : "Official ranking exactly as ESPN publishes it.";
+  }
+  function setMode(m) { thirdState.mode = m; lsSet("wc-third-src", m); renderThird(); }
+
+  function render(thirds) {
+    const container = document.getElementById("container");
+    if (!thirds.length) {
+      container.innerHTML = '<div class="msg">No third-placed teams available yet. Group standings appear once group matches are underway.</div>';
+      return;
+    }
+    const rows = thirds.map((t, i) => {
+      const pos = i + 1;
+      const qualifies = pos <= QUALIFY_SPOTS;
+      const cls = [qualifies ? "qualify" : "", pos === QUALIFY_SPOTS ? "cutline" : ""].join(" ").trim();
+      const badge = t.badge ? `<img src="${t.badge}" alt="" onerror="this.style.display='none'">` : "";
+      const qtag = qualifies
+        ? '<span class="qbadge" data-tip="Currently in a top-8 qualifying spot" title="Currently in a top-8 qualifying spot">Q</span>'
+        : "";
+      const rankTip = qualifies ? "Currently qualifying (top 8)" : "Currently outside the top 8";
+      const gd = t.gd > 0 ? "+" + t.gd : "" + t.gd;
+      return `
+        <tr class="${cls}">
+          <td class="rank-col" title="${rankTip}">${pos}</td>
+          <td class="team-col">
+            <span class="team-cell">${badge}<span class="team-name">${t.team}</span>${qtag}</span>
+          </td>
+          <td><span class="group-tag" data-tip="Finished 3rd in Group ${t.group}" title="Finished 3rd in Group ${t.group}">${t.group || "—"}</span></td>
+          <td>${t.played}</td>
+          <td>${t.win}</td>
+          <td>${t.draw}</td>
+          <td>${t.loss}</td>
+          <td>${t.gf}</td>
+          <td>${t.ga}</td>
+          <td>${gd}</td>
+          <td class="pts">${t.pts}</td>
+        </tr>`;
+    }).join("");
+
+    container.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th data-tip="Rank among the 12 third-placed teams" title="Rank among the 12 third-placed teams">#</th>
+            <th class="team-col">Team</th>
+            <th data-tip="Group the team finished 3rd in" title="Group the team finished 3rd in">Grp</th>
+            <th data-tip="Matches played" title="Matches played">P</th>
+            <th data-tip="Wins" title="Wins">W</th>
+            <th data-tip="Draws" title="Draws">D</th>
+            <th data-tip="Losses" title="Losses">L</th>
+            <th data-tip="Goals for (scored)" title="Goals for (scored)">GF</th>
+            <th data-tip="Goals against (conceded)" title="Goals against (conceded)">GA</th>
+            <th data-tip="Goal difference (GF − GA)" title="Goal difference (GF minus GA)">GD</th>
+            <th data-tip="Points: 3 for a win, 1 for a draw, 0 for a loss" title="Points: 3 win / 1 draw / 0 loss">Pts</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  // ---- Scoreboard: today's real fixtures, with live status -------------------
+  async function loadScoreboard() {
+    const res = await fetch(SCOREBOARD_URL + "?dates=" + todayYYYYMMDD(), { cache: "no-store" });
+    if (!res.ok) throw new Error("scoreboard HTTP " + res.status);
+    const data = await res.json();
+    return (data.events || []).map(ev => {
+      const comp = ev.competitions[0];
+      const cs = comp.competitors || [];
+      const home = cs.find(x => x.homeAway === "home") || cs[0] || {};
+      const away = cs.find(x => x.homeAway === "away") || cs[1] || {};
+      const type = (ev.status && ev.status.type) || {};
+      const state = type.state; // "pre" | "in" | "post"
+      return {
+        home: (home.team && (home.team.shortDisplayName || home.team.displayName)) || "?",
+        away: (away.team && (away.team.shortDisplayName || away.team.displayName)) || "?",
+        hs: home.score, as: away.score,
+        state,
+        detail: type.shortDetail || type.detail || ""
+      };
+    });
+  }
+
+  function renderBanner(matches) {
+    const banner = document.getElementById("liveBanner");
+    if (!matches || !matches.length) { banner.style.display = "none"; return; }
+
+    const anyLive = matches.some(m => m.state === "in");
+    document.getElementById("liveDot").classList.toggle("error", !anyLive);
+
+    document.getElementById("liveMatches").innerHTML = matches.map(m => {
+      const live = m.state === "in", done = m.state === "post";
+      const score = (live || done) ? `${m.hs} – ${m.as}` : "vs";
+      const label = live ? (m.detail || "LIVE") : (done ? "FT" : (m.detail || "Scheduled"));
+      const pillCls = live ? "" : (done ? "done" : "scheduled");
+      const tip = live ? "Match in progress (current minute)" : (done ? "Full time — match finished" : "Kick-off time — not started yet");
+      return `
+        <div class="live-match">
+          <span class="teams">${m.home} <span class="score">${score}</span> ${m.away}</span>
+          <span class="live-pill ${pillCls}" data-tip="${tip}" title="${tip}">${label}</span>
+        </div>`;
+    }).join("");
+    banner.style.display = "";
+  }
+
+  // ---- Knockout bracket ------------------------------------------------------
+  // ESPN lists all 32 knockout ties for the date range; rounds aren't labelled,
+  // but each round is strictly later than the previous, so we sort by date and
+  // bucket by the known round sizes.
+  const KNOCKOUT_URL = SCOREBOARD_URL + "?dates=20260628-20260719";
+  const ROUND_SIZES = [
+    ["Round of 32", 16], ["Round of 16", 8], ["Quarter-finals", 4],
+    ["Semi-finals", 2], ["Third-place play-off", 1], ["Final", 1]
+  ];
+  // ESPN returns events id-ordered = the official match number within each round.
+  // The vertical order that makes the tree connectors join the RIGHT matches is fixed
+  // by the bracket layout (derived from ESPN's "Round of 32 N Winner" feeder labels:
+  // R16#1 ← R32 #1 & #3, etc.). These are constant for the whole tournament.
+  const TREE_ORDER = {
+    r32: [1, 3, 2, 5, 11, 12, 9, 10, 4, 6, 7, 8, 14, 16, 13, 15],
+    r16: [1, 2, 5, 6, 3, 4, 7, 8],
+    qf:  [1, 2, 3, 4],
+    sf:  [1, 2],
+    final: [1]
+  };
+
+  const shortenName = n => n
+    .replace(/Round of 32/g, "R32").replace(/Round of 16/g, "R16")
+    .replace(/Quarterfinal/g, "QF").replace(/Semifinal/g, "SF")
+    .replace(/\bWinner\b/g, "W").replace(/\bLoser\b/g, "L");
+
+  function fmtDay(iso) {
+    return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  }
+  function fmtRange(a, b) {
+    return a.slice(0, 10) === b.slice(0, 10) ? fmtDay(a) : fmtDay(a) + " – " + fmtDay(b);
+  }
+  function parseDate(iso) {
+    if (!iso) return null;
+    const s = iso.replace(/T(\d{2}:\d{2})Z$/, "T$1:00Z"); // some engines need explicit seconds
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function fmtDateTime(iso) {
+    const d = parseDate(iso);
+    if (!d) return "";
+    const day = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+    return day + " · " + time;
+  }
+
+  function side(competitor) {
+    const t = (competitor && competitor.team) || {};
+    const name = t.displayName || "TBD";
+    const placeholder = !t.logo; // real teams always carry a logo; undecided slots don't
+    return {
+      name: placeholder ? shortenName(name) : (t.shortDisplayName || name),
+      logo: t.logo || "",
+      score: competitor && competitor.score,
+      winner: competitor && competitor.winner === true,
+      placeholder
+    };
+  }
+
+  async function loadBracket() {
+    const res = await fetch(KNOCKOUT_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("bracket HTTP " + res.status);
+    const data = await res.json();
+    // Sort by numeric id so each round's events are in match-number order (#1, #2, ...).
+    const evs = (data.events || []).slice().sort((a, b) => (+a.id) - (+b.id));
+    const rounds = [];
+    let i = 0;
+    for (const [name, n] of ROUND_SIZES) { rounds.push({ name, events: evs.slice(i, i + n) }); i += n; }
+    return rounds;
+  }
+
+  // Kick-off in the viewer's local time + the venue ("arena").
+  function metaHtml(ev) {
+    const comp = ev.competitions[0] || {};
+    const venue = comp.venue || ev.venue || {};
+    const vname = venue.fullName || "";
+    const vcity = (venue.address || {}).city || "";
+    const when = fmtDateTime(ev.date);
+    const venueTip = vname ? (vname + (vcity ? " — " + vcity : "")) : "";
+    return `<div class="g-meta">
+      ${when ? `<div class="g-when" data-tip="Kick-off in your local time" title="Local time">📅 ${when}</div>` : ""}
+      ${vname ? `<div class="g-venue" data-tip="${venueTip}" title="${venueTip}">🏟️ ${vname}${vcity ? " · " + vcity : ""}</div>` : ""}
+    </div>`;
+  }
+
+  function gameBox(ev) {
+    const comp = ev.competitions[0];
+    const cs = comp.competitors || [];
+    const home = side(cs.find(x => x.homeAway === "home") || cs[0]);
+    const away = side(cs.find(x => x.homeAway === "away") || cs[1]);
+    const type = (ev.status && ev.status.type) || {};
+    const live = type.state === "in", done = type.state === "post";
+    const show = live || done;
+
+    const row = s => {
+      const cls = ["g-row", s.placeholder ? "placeholder" : "", (done && s.winner) ? "win" : ""].join(" ").trim();
+      const logo = s.logo
+        ? `<img src="${s.logo}" alt="" onerror="this.outerHTML='<span class=&quot;nologo&quot;></span>'">`
+        : '<span class="nologo"></span>';
+      const sc = show ? `<span class="sc">${s.score != null ? s.score : ""}</span>` : "";
+      return `<div class="${cls}">${logo}<span class="nm">${s.name}</span>${sc}</div>`;
+    };
+
+    const meta = metaHtml(ev);
+    let badge = "";
+    if (live) badge = `<span class="g-stat live" data-tip="Match in progress" title="Match in progress">${type.shortDetail || "LIVE"}</span>`;
+    else if (done) badge = `<span class="g-stat done" data-tip="Full time — winner in bold" title="Full time">FT</span>`;
+    const foot = badge ? `<div class="g-foot">${badge}</div>` : "";
+
+    return `<div class="game ${live ? "live" : ""}">${row(home)}${row(away)}${meta}${foot}</div>`;
+  }
+
+  // ---- Projection: fill empty slots from live standings & predict winners ----
+  function strongerByRecord(a, b) {
+    if (!a) return b; if (!b) return a;
+    if ((a.pts || 0) !== (b.pts || 0)) return (a.pts || 0) > (b.pts || 0) ? a : b;
+    if ((a.gd || 0) !== (b.gd || 0)) return (a.gd || 0) > (b.gd || 0) ? a : b;
+    if ((a.gf || 0) !== (b.gf || 0)) return (a.gf || 0) > (b.gf || 0) ? a : b;
+    return (a.name || "").localeCompare(b.name || "") <= 0 ? a : b;
+  }
+
+  function buildProjection(rounds, comp) {
+    const used = new Set();
+    const r32 = rounds[0].events;
+    for (const ev of r32)                       // confirmed qualifiers hold their slots
+      for (const x of (ev.competitions[0].competitors || []))
+        if (x.team && x.team.logo && x.team.id) used.add(x.team.id);
+
+    const mk = (t, projected) => t
+      ? { id: t.id, name: t.team || t.name, logo: t.badge || t.logo || "", pts: t.pts || 0, gd: t.gd || 0, gf: t.gf || 0, projected: !!projected }
+      : null;
+    const fromCompetitor = (x, projected) => {
+      const rec = comp.byId[x.team.id] || {};
+      return { id: x.team.id, name: rec.team || x.team.shortDisplayName || x.team.displayName,
+               logo: x.team.logo || rec.badge || "", pts: rec.pts || 0, gd: rec.gd || 0, gf: rec.gf || 0, projected: !!projected };
+    };
+
+    function slotPos(label) {
+      let m;
+      if ((m = label.match(/Group ([A-L])\b[^]*?(?:2nd|Runners?-?up)/i))) return [m[1], 1];
+      if ((m = label.match(/(?:Runners?-?up)[^]*?Group ([A-L])\b/i))) return [m[1], 1];
+      if ((m = label.match(/Group ([A-L])\b[^]*?(?:1st|Winners?|W)\b/i))) return [m[1], 0];
+      if ((m = label.match(/Winners?[^]*?Group ([A-L])\b/i))) return [m[1], 0];
+      return null;
+    }
+    function resolveR32(x) {
+      const t = x.team || {};
+      if (t.logo) return fromCompetitor(x, false);   // confirmed team
+      const label = t.displayName || "";
+      const pos = slotPos(label);
+      if (pos) { const team = (comp.tables[pos[0]] || [])[pos[1]]; if (team) used.add(team.id); return mk(team, true); }
+      const tp = label.match(/Third Place Group ([A-L\/]+)/i);
+      if (tp) {
+        const set = tp[1].split("/");
+        const t3 = comp.qualified.find(q => set.includes(q.group) && !used.has(q.id));
+        if (t3) { used.add(t3.id); return mk(t3, true); }
+      }
+      return null;
+    }
+
+    // Winner: actual result if finished; current leader if a knockout match is LIVE
+    // (partial result predicts next match); otherwise the better group-stage record.
+    function winnerOf(match) {
+      const cs = (match.ev.competitions && match.ev.competitions[0].competitors) || [];
+      const st = ((match.ev.status || {}).type || {}).state;
+      if (st === "post") {
+        const w = cs.find(x => x.winner === true);
+        if (w && w.team && w.team.id) return fromCompetitor(w, false);
+      }
+      if (st === "in" || st === "post") {
+        const h = cs.find(x => x.homeAway === "home"), a = cs.find(x => x.homeAway === "away");
+        const hs = parseInt(h && h.score, 10), as = parseInt(a && a.score, 10);
+        if (!isNaN(hs) && !isNaN(as) && hs !== as) return fromCompetitor(hs > as ? h : a, st !== "post");
+      }
+      return strongerByRecord(match.home, match.away);
+    }
+
+    const disp = (round, order) => order.map(n => round.events[n - 1]).filter(Boolean);
+    const r32M = disp(rounds[0], TREE_ORDER.r32).map(ev => {
+      const cs = ev.competitions[0].competitors || [];
+      return { ev, home: resolveR32(cs.find(x => x.homeAway === "home") || cs[0]),
+                    away: resolveR32(cs.find(x => x.homeAway === "away") || cs[1]) };
+    });
+    const advance = (winners, round, order) => disp(round, order)
+      .map((ev, i) => ({ ev, home: winners[2 * i], away: winners[2 * i + 1] }));
+
+    const w32 = r32M.map(winnerOf);
+    const r16M = advance(w32, rounds[1], TREE_ORDER.r16);
+    const w16 = r16M.map(winnerOf);
+    const qfM = advance(w16, rounds[2], TREE_ORDER.qf);
+    const wqf = qfM.map(winnerOf);
+    const sfM = advance(wqf, rounds[3], TREE_ORDER.sf);
+    const wsf = sfM.map(winnerOf);
+    const finalM = advance(wsf, rounds[5], TREE_ORDER.final);
+
+    const loserOf = m => { if (!m || !m.home || !m.away) return (m && (m.home || m.away)) || null; return winnerOf(m) === m.home ? m.away : m.home; };
+    const thirdEv = rounds[4].events[0];
+    const third = thirdEv ? { ev: thirdEv, home: loserOf(sfM[0]), away: loserOf(sfM[1]) } : null;
+
+    return {
+      columns: [
+        { name: rounds[0].name, matches: r32M }, { name: rounds[1].name, matches: r16M },
+        { name: rounds[2].name, matches: qfM }, { name: rounds[3].name, matches: sfM },
+        { name: rounds[5].name, matches: finalM }
+      ], third
+    };
+  }
+
+  function projGameBox(match) {
+    const st = ((match.ev.status || {}).type || {}).state;
+    if (st === "in" || st === "post") return gameBox(match.ev); // real teams & live/final scores
+    const winner = (match.home && match.away) ? strongerByRecord(match.home, match.away) : (match.home || match.away);
+    const row = s => {
+      if (!s) return '<div class="g-row placeholder"><span class="nologo"></span><span class="nm">TBD</span></div>';
+      const cls = ["g-row", s.projected ? "proj" : "", (winner && s === winner) ? "win" : ""].join(" ").trim();
+      const logo = s.logo
+        ? `<img src="${s.logo}" alt="" onerror="this.outerHTML='<span class=&quot;nologo&quot;></span>'">`
+        : '<span class="nologo"></span>';
+      return `<div class="${cls}">${logo}<span class="nm">${s.name || "TBD"}</span></div>`;
+    };
+    const badge = '<span class="g-stat proj" data-tip="Projected from live standings — better record / current live leader advances" title="Projected">PROJ</span>';
+    return `<div class="game proj-game">${row(match.home)}${row(match.away)}${metaHtml(match.ev)}<div class="g-foot">${badge}</div></div>`;
+  }
+
+  const bracketState = { mode: lsGet("wc-bracket", "confirmed"), rounds: null, comp: null };
+  function setBracketMode(m) { bracketState.mode = m; lsSet("wc-bracket", m); renderBracket(); }
+
+  function renderBracket() {
+    const el = document.getElementById("bracket");
+    const rounds = bracketState.rounds;
+    const projected = bracketState.mode === "projected";
+    document.getElementById("brkConfirmed").classList.toggle("active", !projected);
+    document.getElementById("brkProjected").classList.toggle("active", projected);
+
+    if (!rounds || !rounds.some(r => r.events.length)) {
+      el.innerHTML = '<div class="msg">Bracket not available yet.</div>';
+      return;
+    }
+
+    let cols, thirdHtml, note;
+    if (projected && bracketState.comp) {
+      const proj = buildProjection(rounds, bracketState.comp);
+      cols = proj.columns.map(c => {
+        const matches = c.matches.map(m => `<div class="match">${projGameBox(m)}</div>`).join("");
+        return `<div class="round-col"><div class="rc-title">${c.name}</div><div class="matches">${matches}</div></div>`;
+      }).join("");
+      thirdHtml = proj.third
+        ? `<div class="third-place"><div class="rc-title">🥉 ${rounds[4].name}</div>${projGameBox(proj.third)}</div>`
+        : "";
+      note = "🔮 Projected — empty slots filled from live standings; winners predicted (better record, or the current live leader). Hypothetical.";
+    } else {
+      const pick = (round, order) => order.map(n => round.events[n - 1]).filter(Boolean);
+      const colDefs = [
+        { name: rounds[0].name, evs: pick(rounds[0], TREE_ORDER.r32) },
+        { name: rounds[1].name, evs: pick(rounds[1], TREE_ORDER.r16) },
+        { name: rounds[2].name, evs: pick(rounds[2], TREE_ORDER.qf) },
+        { name: rounds[3].name, evs: pick(rounds[3], TREE_ORDER.sf) },
+        { name: rounds[5].name, evs: pick(rounds[5], TREE_ORDER.final) }
+      ];
+      cols = colDefs.map(c => {
+        const matches = c.evs.map(ev => `<div class="match">${gameBox(ev)}</div>`).join("")
+          || '<div class="match"><div class="game"><div class="g-row placeholder"><span class="nologo"></span><span class="nm">TBD</span></div></div></div>';
+        return `<div class="round-col"><div class="rc-title">${c.name}</div><div class="matches">${matches}</div></div>`;
+      }).join("");
+      const third = rounds[4];
+      thirdHtml = (third && third.events.length)
+        ? `<div class="third-place"><div class="rc-title">🥉 ${third.name}</div>${gameBox(third.events[0])}</div>`
+        : "";
+      note = "📅 Kick-off times shown in your local timezone · 🏟️ = venue";
+    }
+
+    el.innerHTML = `<div class="bracket-note">${note}</div>
+      <div class="bracket-scroll"><div class="bracket-tree">${cols}</div></div>${thirdHtml}`;
+  }
+
+  // ---- Countdown to next refresh ---------------------------------------------
+  let nextRefreshAt = 0;
+  function tickCountdown() {
+    const secs = Math.max(0, Math.ceil((nextRefreshAt - Date.now()) / 1000));
+    document.getElementById("countdown").textContent = secs;
+  }
+
+  async function load() {
+    nextRefreshAt = Date.now() + REFRESH_MS;
+    setStatus("Updating…", false);
+    try {
+      const [groups, matches, rounds, groupResults] = await Promise.all([
+        fetchStandingsGroups(),
+        loadScoreboard().catch(() => []),
+        loadBracket().catch(() => null),
+        loadGroupResults().catch(() => [])
+      ]);
+      const comp = computeGroups(groups, groupResults);
+      thirdState.official = officialThirds(groups);
+      thirdState.calc = comp.thirds;
+      renderThird();
+      renderBanner(matches);
+      if (rounds) bracketState.rounds = rounds;
+      bracketState.comp = comp;
+      renderBracket();
+      const live = matches.filter(m => m.state === "in").length;
+      document.getElementById("updated").textContent = "Updated " + new Date().toLocaleTimeString();
+      setStatus(live ? `Live · ${live} in progress` : "Live", false);
+    } catch (err) {
+      console.error(err);
+      setStatus("Offline — couldn't reach ESPN", true);
+      const c = document.getElementById("container");
+      if (!c.querySelector("table")) {
+        c.innerHTML = '<div class="msg">Could not load live data. It will retry automatically.</div>';
+      }
+    }
+  }
+
+  document.getElementById("refresh").addEventListener("click", load);
+  document.getElementById("srcEspn").addEventListener("click", () => setMode("espn"));
+  document.getElementById("srcCalc").addEventListener("click", () => setMode("calc"));
+  document.getElementById("brkConfirmed").addEventListener("click", () => setBracketMode("confirmed"));
+  document.getElementById("brkProjected").addEventListener("click", () => setBracketMode("projected"));
+  load();
+  setInterval(load, REFRESH_MS);
+  setInterval(tickCountdown, 250);
+</script>
+</body>
+</html>
