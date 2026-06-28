@@ -267,6 +267,24 @@
   .live-pill[data-tip]:hover::after { left: auto; right: 0; transform: none; }
   .live-pill[data-tip]:hover::before { display: none; }
 
+  /* ---- Darija "learn as you read" tooltips (only when Darija is selected) ---- */
+  .gloss { cursor: help; border-bottom: 1px dotted rgba(140,170,255,.55); }
+  .gloss[data-tip]:hover::after {
+    white-space: pre-line; text-align: left; direction: ltr;
+    max-width: 280px; font-size: 12px; line-height: 1.5; font-weight: 400;
+  }
+  /* the transliteration guide table at the top */
+  .translit-guide table { border-collapse: collapse; width: 100%; font-size: 12.5px; margin: 6px 0 4px; }
+  .translit-guide th, .translit-guide td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; vertical-align: top; }
+  .translit-guide thead th { background: var(--panel-2); color: var(--text); font-weight: 600; }
+  .translit-guide td.ar { font-size: 17px; direction: rtl; white-space: nowrap; color: var(--text); }
+  .translit-guide code { background: var(--panel-2); padding: 1px 6px; border-radius: 4px; color: #9fc1ff; font-size: 12px; }
+  .translit-guide .ex { color: var(--muted); }
+  .translit-guide .ex b { color: var(--text); font-weight: 600; }
+  .translit-guide .legend-key { margin: 0 0 10px; line-height: 1.7; }
+  .translit-guide .legend-key span { white-space: nowrap; }
+  html[dir="rtl"] .translit-guide th, html[dir="rtl"] .translit-guide td { text-align: left; }
+
   /* ---- Accordion (native <details>, no JS) ---- */
   .rules { margin: 0 0 18px; }
   details.acc {
@@ -333,6 +351,41 @@
     <div class="live-banner" id="liveBanner" style="display:none">
       <h2><span class="dot" id="liveDot" data-i18n-tip="liveDotTip"></span> <span data-i18n="matchesToday">Matches today</span></h2>
       <div id="liveMatches"></div>
+    </div>
+
+    <div class="rules">
+      <details class="acc translit-guide">
+        <summary data-i18n="translitSum">🗣️ Learn to read Darija — pronunciation guide</summary>
+        <div class="acc-body">
+          <p>When <b>Darija (العربية - دارجة)</b> is selected, every Darija word in the page is <span class="gloss" data-tip="🗣 dāba&#10;⌨ daba&#10;→ now" style="cursor:help">underlined</span> — hover (or tap) it to see its pronunciation and meaning. Each tooltip shows three lines:</p>
+          <p class="legend-key">
+            <span>🗣 <b>Academic</b> — scholarly phonemic transliteration (most accurate).</span><br>
+            <span>⌨ <b>Arabizi</b> — the "chat alphabet" Moroccans actually type, using numbers for sounds with no Latin letter.</span><br>
+            <span>→ <b>English</b> — the translation.</span>
+          </p>
+          <p>Most letters sound like their Latin equivalents. The table below covers the sounds that don't — the ones worth learning:</p>
+          <table>
+            <thead>
+              <tr><th>Letter</th><th>🗣 Academic</th><th>⌨ Arabizi</th><th>Sound</th><th>Example</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="ar">ع</td><td><code>ʿ</code></td><td><code>3</code></td><td>A voiced sound made by tightening the throat — no English equivalent.</td><td class="ex">العالم · <b>l-ʿalam</b> / l-3alam — the world</td></tr>
+              <tr><td class="ar">ح</td><td><code>ḥ</code></td><td><code>7</code></td><td>A hard, breathy <i>h</i> from deep in the throat (not the soft English h).</td><td class="ex">أحسن · <b>aḥsen</b> / a7sen — best</td></tr>
+              <tr><td class="ar">خ</td><td><code>x</code></td><td><code>kh</code></td><td>Like the <i>ch</i> in Scottish "loch" or German "Bach".</td><td class="ex">الخانة · <b>l-xana</b> / l-khana — the slot</td></tr>
+              <tr><td class="ar">غ</td><td><code>ġ</code></td><td><code>gh</code></td><td>Like a gargled French <i>r</i> — the voiced pair of خ.</td><td class="ex">الغليظ · <b>l-ġliḍ</b> / l-ghlid — the bold</td></tr>
+              <tr><td class="ar">ق</td><td><code>q</code></td><td><code>9</code></td><td>A deep <i>k</i> made far back in the throat.</td><td class="ex">نقط · <b>nuqaṭ</b> / no9at — points</td></tr>
+              <tr><td class="ar">ش</td><td><code>š</code></td><td><code>sh</code></td><td>Like <i>sh</i> in "ship".</td><td class="ex">مباشر · <b>mubašir</b> / mubashir — live</td></tr>
+              <tr><td class="ar">ج</td><td><code>ž</code></td><td><code>j</code></td><td>Like the <i>s</i> in "measure" / French <i>j</i>.</td><td class="ex">جدول · <b>žadwal</b> / jadwal — table</td></tr>
+              <tr><td class="ar">ص</td><td><code>ṣ</code></td><td><code>s</code></td><td>An emphatic ("heavy") S, said with a fuller mouth than a plain s.</td><td class="ex">أصحاب · <b>aṣḥab</b> / as7ab — holders</td></tr>
+              <tr><td class="ar">ط</td><td><code>ṭ</code></td><td><code>t</code></td><td>An emphatic ("heavy") T.</td><td class="ex">الخط · <b>l-xeṭṭ</b> / l-khatt — the line</td></tr>
+              <tr><td class="ar">ض</td><td><code>ḍ</code></td><td><code>d</code></td><td>An emphatic ("heavy") D.</td><td class="ex">ضد · <b>ḍidd</b> / did — versus</td></tr>
+              <tr><td class="ar">ء</td><td><code>ʾ</code></td><td><code>2</code></td><td>A glottal stop — the catch in the middle of "uh-oh".</td><td class="ex">المباراة · <b>l-mubaraʾa</b> / l-mubara2a — the match</td></tr>
+              <tr><td class="ar">ـَ</td><td><code>ə</code></td><td><code>e</code></td><td>A short, neutral vowel (schwa) — like the <i>a</i> in "sofa". Very common in Darija.</td><td class="ex">مَن · <b>mən</b> / men — from</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:10px"><b>Note:</b> a bar over a vowel (<code>ā ī ū</code>) marks a long vowel; everything else is read as written.</p>
+        </div>
+      </details>
     </div>
 
     <div class="rules">
@@ -494,7 +547,8 @@
       acc4Sum: "Reading the bracket",
       acc4Body: `<ul><li>The bracket lists every knockout tie. A real team appears once its group result is final; until then the slot shows a placeholder.</li><li>Placeholders use the feeding round: <b>R32 / R16 / QF / SF</b>, plus <b>W</b> (winner) or <b>L</b> (loser). Example: <b>R32 1 W</b> = the winner of Round-of-32 match 1.</li><li>Tie status: a red minute = <b>live</b>, <b>FT</b> = finished (winner in bold), a date = scheduled kick-off. Italic grey names are slots whose team isn't decided yet.</li></ul>`,
       footer: 'Auto-refreshes while matches are live · Data: <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener">ESPN</a> · Tiebreakers: points → goal difference → goals scored',
-      langLabel: "Language"
+      langLabel: "Language",
+      translitSum: "🗣️ Learn to read Darija — pronunciation guide"
     },
     es: {
       title: "🏆 Mundial 2026 — Clasificación de terceros puestos",
@@ -537,7 +591,8 @@
       acc4Sum: "Cómo leer el cuadro",
       acc4Body: `<ul><li>El cuadro muestra cada eliminatoria. Un equipo real aparece cuando su grupo termina; hasta entonces la casilla muestra un marcador.</li><li>Los marcadores usan la ronda de origen: <b>R32 / R16 / QF / SF</b>, más <b>W</b> (ganador) o <b>L</b> (perdedor). Ejemplo: <b>R32 1 W</b> = el ganador del partido 1 de dieciseisavos.</li><li>Estado: un minuto en rojo = <b>en vivo</b>, <b>FT</b> = terminado (ganador en negrita), una fecha = inicio programado. Los nombres en cursiva gris son casillas cuyo equipo aún no está decidido.</li></ul>`,
       footer: 'Se actualiza mientras hay partidos en vivo · Datos: <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener">ESPN</a> · Desempates: puntos → diferencia de goles → goles a favor',
-      langLabel: "Idioma"
+      langLabel: "Idioma",
+      translitSum: "🗣️ Aprende a leer el dariya — guía de pronunciación"
     },
     ar: {
       title: "🏆 كأس العالم 2026 — ترتيب أصحاب المركز الثالث",
@@ -580,7 +635,8 @@
       acc4Sum: "كيفاش تقرا الجدول",
       acc4Body: `<ul><li>الجدول كيبيّن كل مواجهة د الإقصائيات. المنتخب الحقيقي كيبان ملي كتسالا مجموعتو؛ قبل من هادشي الخانة كتورّي علامة مؤقتة.</li><li>العلامات كتستعمل الدور اللي جا منو: <b>R32 / R16 / QF / SF</b>، زائد <b>W</b> (الفائز) ولا <b>L</b> (الخاسر). مثال: <b>R32 1 W</b> = الفائز ف ماتش 1 د دور الـ32.</li><li>الحالة: دقيقة حمرا = <b>مباشر</b>، <b>FT</b> = سالا (الفائز بالخط الغليظ)، تاريخ = وقت البداية المبرمج. الأسماء المايلة الرمادية هي خانات مازال ماتحدّد منتخبها.</li></ul>`,
       footer: 'كيتحدّث وقت اللي كاينين ماتشات مباشرين · المعطيات: <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener">ESPN</a> · كسر التعادل: النقط ← فرق الأهداف ← الأهداف المسجلة',
-      langLabel: "اللغة"
+      langLabel: "اللغة",
+      translitSum: "🗣️ تعلّم تقرا الدارجة — دليل النطق"
     }
   };
 
@@ -589,6 +645,349 @@
   function uiLocale() { return lang === "ar" ? "ar-MA" : (lang === "es" ? "es-ES" : "en-US"); }
   const ROUND_KEY = { "Round of 32": "r32", "Round of 16": "r16", "Quarter-finals": "qf", "Semi-finals": "sf", "Final": "final", "Third-place play-off": "third" };
   function roundName(n) { return ROUND_KEY[n] ? t(ROUND_KEY[n]) : n; }
+
+  // ---- Darija glossary: surface form -> [academic, arabizi, English] ----------
+  // Used only when Darija is selected: every Darija word/expression on the page
+  // is wrapped in a tooltip showing both transliteration systems + the meaning.
+  const GLOSS = {
+    // multi-word expressions (matched first via longest-match)
+    "المركز الثالث": ["əl-markaz ət-tālet", "l-markaz t-talet", "third place"],
+    "أصحاب المركز الثالث": ["ʾaṣḥab əl-markaz ət-tālet", "as7ab l-markaz t-talet", "the third-placed teams"],
+    "صاحب المركز الثالث": ["ṣaḥeb əl-markaz ət-tālet", "sa7eb l-markaz t-talet", "third-placed (team)"],
+    "كأس العالم": ["kaʾs əl-ʿalam", "ka2s l-3alam", "the World Cup"],
+    "دور المجموعات": ["dor əl-mažmuʿat", "dor l-majmou3at", "group stage"],
+    "فرق الأهداف": ["farq əl-ʾahdaf", "far9 l-ahdaf", "goal difference"],
+    "الوقت كامل": ["əl-waqt kamel", "l-wa9t kamel", "full time"],
+    // single words
+    "اللي": ["əlli", "lli", "that / which / who"],
+    "المركز": ["əl-markaz", "l-markaz", "the place / position"],
+    "الثالث": ["ət-tālet", "t-talet", "the third"],
+    "الـ": ["əl-", "l-", "the"],
+    "دابا": ["daba", "daba", "now"],
+    "خدّامة": ["xeddama", "kheddama", "running / ongoing (fem.)"],
+    "مباشر": ["mubašir", "mubashir", "live"],
+    "من": ["mən", "men", "from / of"],
+    "الترتيب": ["ət-tartib", "t-tartib", "the ranking / standings"],
+    "الأهداف": ["əl-ʾahdaf", "l-ahdaf", "the goals"],
+    "أحسن": ["ʾaḥsən", "a7sen", "best / better"],
+    "د": ["d", "d", "of"],
+    "المباريات": ["əl-mubaryat", "l-mubaryat", "the matches"],
+    "غير": ["ġir", "ghir", "only / just"],
+    "أصحاب": ["ʾaṣḥab", "as7ab", "holders / owners (of)"],
+    "دور": ["dor", "dor", "round"],
+    "على": ["ʿla", "3la", "on / about / than"],
+    "مازال": ["mazal", "mazal", "still / not yet"],
+    "ف": ["f", "f", "in"],
+    "النهائي": ["ən-nihaʾi", "n-niha2i", "the final"],
+    "صاحب": ["ṣaḥeb", "sa7eb", "holder / owner"],
+    "التأهل": ["ət-taʾahhul", "t-ta2ahhol", "the qualification"],
+    "الرسمي": ["ər-rasmi", "r-rasmi", "the official"],
+    "فيها": ["fiha", "fiha", "in it / in which"],
+    "سالا": ["sala", "sala", "finished / ended"],
+    "فرق": ["farq", "far9", "difference"],
+    "النقط": ["ən-nuqaṭ", "n-no9at", "the points"],
+    "المباراة": ["əl-mubaraʾa", "l-mubara2a", "the match"],
+    "وقت": ["waqt", "wa9t", "time"],
+    "البداية": ["əl-bidaya", "l-bidaya", "the start / kick-off"],
+    "الجدول": ["əl-žadwal", "l-jadwal", "the table / bracket"],
+    "الفائز": ["əl-faʾiz", "l-fa2iz", "the winner"],
+    "مجموعة": ["mažmuʿa", "majmou3a", "group"],
+    "كل": ["koll", "koll", "every / all"],
+    "حتى": ["ḥtta", "7tta", "even / until / any"],
+    "حتا": ["ḥtta", "7tta", "also / even"],
+    "جدول": ["žadwal", "jadwal", "table / bracket"],
+    "الإقصائيات": ["əl-ʾiqṣaʾiyat", "l-i9sa2iyat", "the knockouts"],
+    "البيانات": ["əl-bayanat", "l-bayanat", "the data"],
+    "بين": ["bin", "bin", "between / among"],
+    "كيتأهلو": ["kitʾahhlu", "kit2ahhlou", "they qualify"],
+    "ما": ["ma", "ma", "not / what"],
+    "محسوب": ["maḥsub", "ma7soub", "calculated"],
+    "المجموعة": ["əl-mažmuʿa", "l-majmou3a", "the group"],
+    "ثالث": ["tālet", "talet", "third"],
+    "المسجلة": ["əl-musažžala", "l-musajjala", "the scored (goals)"],
+    "الوقت": ["əl-waqt", "l-wa9t", "the time"],
+    "كامل": ["kamel", "kamel", "full / complete"],
+    "المنتخبات": ["əl-muntaxabat", "l-montakhabat", "the (national) teams"],
+    "منتخب": ["muntaxab", "montakhab", "national team"],
+    "هاد": ["had", "had", "this"],
+    "كأس": ["kaʾs", "ka2s", "cup"],
+    "العالم": ["əl-ʿalam", "l-3alam", "the world"],
+    "ترتيب": ["tartib", "tartib", "ranking / standings"],
+    "المجموعات": ["əl-mažmuʿat", "l-majmou3at", "the groups"],
+    "التحديث": ["ət-taḥdit", "t-ta7dit", "the update"],
+    "ماتش": ["matš", "match", "match"],
+    "المباشرة": ["əl-mubašira", "l-mubashira", "the live (fem.)"],
+    "مباريات": ["mubaryat", "mubaryat", "matches"],
+    "الخط": ["əl-xeṭṭ", "l-khatt", "the line"],
+    "الذهبي": ["əd-dahabi", "d-dahabi", "the golden"],
+    "باش": ["baš", "bash", "so that / in order to"],
+    "بحال": ["bḥal", "b7al", "like / as"],
+    "كتنشرو": ["katnəšru", "katnshrou", "they publish it"],
+    "نتائج": ["nataʾiž", "nata2ij", "results"],
+    "بما": ["bima", "bima", "including / as"],
+    "يمكن": ["yemkən", "yemken", "may / can"],
+    "كيبان": ["kayban", "kayban", "appears / shows up"],
+    "المنتخب": ["əl-muntaxab", "l-montakhab", "the team"],
+    "الملعوبة": ["əl-malʿuba", "l-mal3ouba", "the played (matches)"],
+    "الفوزات": ["əl-fuzat", "l-fouzat", "the wins"],
+    "التعادلات": ["ət-taʿadulat", "t-ta3adoulat", "the draws"],
+    "الخسارات": ["əl-xasarat", "l-khasarat", "the losses"],
+    "المستقبلة": ["əl-mustaqbala", "l-mosta9bala", "the conceded (goals)"],
+    "للفوز": ["lelfawz", "lelfawz", "for a win"],
+    "للتعادل": ["lettaʿadul", "letta3adoul", "for a draw"],
+    "للخسارة": ["lelxasara", "lelkhasara", "for a loss"],
+    "مركز": ["markaz", "markaz", "position / place"],
+    "مباراة": ["mubaraʾa", "mubara2a", "match"],
+    "وحدة": ["waḥda", "wa7da", "one (fem.) / a single"],
+    "كيحمّل": ["kayḥemmel", "kay7emmel", "loading"],
+    "تعذّر": ["taʿaddar", "ta3addar", "it failed / couldn't"],
+    "بعد": ["baʿd", "ba3d", "after / in"],
+    "ضد": ["ḍidd", "did", "against / vs"],
+    "سالات": ["salat", "salat", "finished (fem.)"],
+    "الخانات": ["əl-xanat", "l-khanat", "the slots / cells"],
+    "متوقّع": ["mutawaqqaʿ", "mtwa99a3", "projected / expected"],
+    "تلعبات": ["təlʿabat", "tel3abat", "were played"],
+    "ولا": ["wlla", "wlla", "or"],
+    "النتيجة": ["ən-natiža", "n-natija", "the result / score"],
+    "الجاية": ["əž-žaya", "j-jaya", "the upcoming (fem.)"],
+    "تبقى": ["tbqa", "tb9a", "stays / remains"],
+    "محدّدة": ["mḥeddda", "m7eddda", "decided (fem.)"],
+    "بالتوقيت": ["bittawqit", "bittaw9it", "by the time(zone)"],
+    "المحلي": ["əl-maḥalli", "l-ma7alli", "the local"],
+    "ديالك": ["dyalek", "dyalek", "your / yours"],
+    "مؤقّت": ["muʾaqqat", "mu2a99at", "provisional / temporary"],
+    "بالخط": ["bəl-xeṭṭ", "bel-khatt", "in (bold)face"],
+    "الغليظ": ["əl-ġliḍ", "l-ghlid", "the bold / thick"],
+    "كيفاش": ["kifaš", "kifash", "how"],
+    "بـ": ["b-", "b-", "by / with"],
+    "كيتحدّث": ["kaytḥeddet", "kayt7eddet", "it updates"],
+    "معايير": ["maʿayir", "ma3ayir", "criteria"],
+    "كسر": ["ksər", "kser", "breaking"],
+    "التعادل": ["ət-taʿadul", "t-ta3adoul", "the tie / draw"],
+    "ملي": ["mlli", "mlli", "when"],
+    "أكثر": ["ʾaktar", "aktar", "more / most"],
+    "نقط": ["nuqaṭ", "no9at", "points"],
+    "أهداف": ["ʾahdaf", "ahdaf", "goals"],
+    "التلقائي": ["ət-tilqaʾi", "t-til9a2i", "the automatic"],
+    "متوقف": ["mutawaqqef", "mtwa99ef", "paused / stopped"],
+    "ماكاين": ["makayn", "makayn", "there isn't"],
+    "النتائج": ["ən-nataʾiž", "n-nata2ij", "the results"],
+    "والترتيب": ["w-ət-tartib", "w-t-tartib", "and the ranking"],
+    "حدّث": ["ḥeddet", "7eddet", "update! (refresh)"],
+    "حالة": ["ḥala", "7ala", "status / state"],
+    "مصدر": ["maṣdar", "masdar", "source"],
+    "المباشر": ["əl-mubašir", "l-mubashir", "the live"],
+    "اليوم": ["əl-yum", "l-youm", "today"],
+    "منتخبات": ["muntaxabat", "montakhabat", "teams"],
+    "لدور": ["l-dor", "l-dor", "to the round (of)"],
+    "المقطّع": ["əl-muqaṭṭaʿ", "l-mou9atta3", "the dashed"],
+    "هو": ["huwa", "huwa", "it is / he is"],
+    "حد": ["ḥedd", "7edd", "limit / cut-off"],
+    "دوز": ["duz", "douz", "pass / move (the cursor)"],
+    "الفأرة": ["əl-faʾra", "l-fa2ra", "the mouse (cursor)"],
+    "أي": ["ʾayy", "ay", "any"],
+    "اختصار": ["ixtiṣar", "ikhtisar", "abbreviation"],
+    "تعرف": ["tʿarf", "t3arf", "you (can) know"],
+    "معناه": ["mʿnah", "m3nah", "its meaning"],
+    "يختلف": ["yextalef", "yekhtalef", "it differs"],
+    "كيجيب": ["kayžib", "kayjib", "fetching / brings"],
+    "ماكايناش": ["makaynaš", "makaynash", "there aren't"],
+    "منين": ["mnin", "mnin", "when / once"],
+    "كيبداو": ["kaybdaw", "kaybdaw", "they start"],
+    "متأهل": ["mutaʾahhil", "mta2ahhil", "qualified"],
+    "خارج": ["xarež", "kharej", "outside"],
+    "أخضر": ["xḍar", "khdar", "green"],
+    "كاينة": ["kayna", "kayna", "there is (fem.)"],
+    "مباشرة": ["mubašira", "mubashira", "live (fem.) / directly"],
+    "أحمر": ["ḥmar", "7mar", "red"],
+    "كيحدّث": ["kayḥeddet", "kay7eddet", "it updates"],
+    "محيّن": ["mḥeyyen", "m7eyyen", "up to date"],
+    "ماكاينش": ["makaynš", "makaynsh", "there isn't"],
+    "الاتصال": ["əl-ittiṣal", "l-ittisal", "the connection"],
+    "الوصول": ["əl-wuṣul", "l-wousoul", "reaching / access"],
+    "لـ": ["l-", "l-", "to"],
+    "تحدّث": ["tḥeddet", "t7eddet", "updated"],
+    "الجاي": ["əž-žay", "j-jay", "the next"],
+    "ث": ["t", "t", "sec (abbrev. of ثانية)"],
+    "تحميل": ["taḥmil", "ta7mil", "loading"],
+    "غادي": ["ġadi", "ghadi", "will / going to"],
+    "يعاود": ["yʿawed", "y3awed", "it will retry"],
+    "وحدو": ["wḥdo", "w7do", "by itself"],
+    "انتهت": ["əntahat", "intahat", "ended (full time)"],
+    "مبرمجة": ["mubarmaža", "mbarmaja", "scheduled (fem.)"],
+    "الدقيقة": ["əd-daqiqa", "d-da9i9a", "the minute"],
+    "بدات": ["bdat", "bdat", "it started (fem.)"],
+    "شجرة": ["šəžra", "shejra", "tree"],
+    "البطولة": ["əl-buṭula", "l-boutoula", "the tournament"],
+    "الفارغة": ["əl-farġa", "l-fargha", "the empty (fem.)"],
+    "مؤكّد": ["muʾakkad", "mou2akkad", "confirmed"],
+    "وري": ["warri", "warri", "show"],
+    "المؤكّدة": ["əl-muʾakkada", "l-mou2akkada", "the confirmed (fem.)"],
+    "خلّي": ["xelli", "khelli", "leave / keep"],
+    "ماتحدّداتش": ["matḥeddadatš", "mat7eddadatsh", "not yet decided"],
+    "فارغة": ["farġa", "fargha", "empty (fem.)"],
+    "تأهيل": ["taʾhil", "ta2hil", "advancing / qualifying"],
+    "أوقات": ["ʾawqat", "aw9at", "times"],
+    "الملعب": ["əl-malʿab", "l-mal3ab", "the stadium"],
+    "معمور": ["maʿmur", "ma3mour", "filled in"],
+    "بالمباريات": ["bəl-mubaryat", "bel-mubaryat", "with the matches"],
+    "واللي": ["w-əlli", "w-lli", "and which"],
+    "مجمّدة": ["mžemmda", "mjemmda", "frozen (fem.)"],
+    "تبدا": ["tbda", "tbda", "it starts"],
+    "محدّد": ["mḥeddad", "m7eddad", "decided / set"],
+    "كيتوقف": ["kaytwaqqef", "kaytwa99ef", "depends on / stops at"],
+    "نتيجة": ["natiža", "natija", "result / score"],
+    "ربع": ["rbəʿ", "rbe3", "quarter"],
+    "نصف": ["nəṣf", "nesf", "half"],
+    "كيتصنّفو": ["kitṣennfu", "kitsennfou", "they are classified"],
+    "وكيتأهلو": ["w-kitʾahhlu", "w-kit2ahhlou", "and they qualify"],
+    "مقسّمين": ["mqessmin", "m9essmin", "divided / split"],
+    "كيلعب": ["kaylʿab", "kayl3ab", "plays"],
+    "مرة": ["merra", "merra", "once / one time"],
+    "الآخرين": ["əl-ʾaxrin", "l-akhrin", "the others"],
+    "الأوائل": ["əl-ʾawaʾil", "l-awa2il", "the top / first ones"],
+    "هوما": ["huma", "houma", "they / them"],
+    "يكمل": ["ykemmel", "ykemmel", "it completes"],
+    "كيرتّب": ["kayrettab", "kayrettab", "it ranks / orders"],
+    "فوق": ["fuq", "fou9", "above"],
+    "مراكز": ["marakez", "marakez", "positions"],
+    "معلّمين": ["mʿellmin", "m3ellmin", "marked"],
+    "اللخر": ["əl-ləxxer", "l-lekhher", "the last / bottom"],
+    "خارجين": ["xaržin", "kharjin", "out / eliminated"],
+    "إيوا": ["iwa", "iwa", "so / well"],
+    "المراكز": ["əl-marakez", "l-marakez", "the positions"],
+    "تتبدّل": ["ttbeddel", "ttbeddel", "can change"],
+    "بالترتيب": ["bət-tartib", "bet-tartib", "in order"],
+    "كيتعادلو": ["kitʿadlu", "kit3adlou", "they are level / tie"],
+    "الفيفا": ["əl-fifa", "l-fifa", "FIFA"],
+    "كيفرّق": ["kayferreq", "kayferre9", "it separates / breaks ties"],
+    "بيناتهم": ["binathum", "binathoum", "between them"],
+    "مسجلة": ["musažžala", "musajjala", "scored"],
+    "رسمية": ["rasmiyya", "rasmiyya", "official"],
+    "المواجهة": ["əl-muwažaha", "l-muwajaha", "the head-to-head"],
+    "اللعب": ["əl-lʿab", "l-l3ab", "the play"],
+    "النظيف": ["ən-naḍif", "n-nadif", "the fair / clean"],
+    "وفاللخر": ["w-fəl-ləxxer", "w-fel-lekhher", "and at the end"],
+    "القرعة": ["əl-qurʿa", "l-9our3a", "the draw (of lots)"],
+    "الصفحة": ["əṣ-ṣafḥa", "s-saf7a", "the page"],
+    "كترتّب": ["katrettab", "katrettab", "it ranks (by)"],
+    "بالتلاتة": ["bət-tlata", "bet-tlata", "by the (first) three"],
+    "داخل": ["daxel", "dakhel", "inside / within"],
+    "كيجي": ["kayži", "kayji", "it comes"],
+    "نيشان": ["nišan", "nishan", "straight / directly"],
+    "مفتاح": ["miftaḥ", "mifta7", "key / legend"],
+    "الأعمدة": ["əl-ʾaʿmida", "l-a3mida", "the columns"],
+    "الاختصارات": ["əl-ixtiṣarat", "l-ikhtisarat", "the abbreviations"],
+    "فوز": ["fawz", "fawz", "win"],
+    "تعادل": ["taʿadul", "ta3adoul", "draw / tie"],
+    "خسارة": ["xasara", "khasara", "loss"],
+    "تقرا": ["tqra", "t9ra", "you read"],
+    "كيبيّن": ["kaybeyyen", "kaybeyyen", "it shows"],
+    "مواجهة": ["muwažaha", "muwajaha", "tie / encounter"],
+    "الحقيقي": ["əl-ḥaqiqi", "l-7a9i9i", "the real / actual"],
+    "كتسالا": ["katsala", "katsala", "it finishes (fem.)"],
+    "مجموعتو": ["mažmuʿtu", "majmou3tou", "its group"],
+    "قبل": ["qbəl", "9bel", "before"],
+    "هادشي": ["hadši", "hadshi", "this (thing)"],
+    "الخانة": ["əl-xana", "l-khana", "the slot / cell"],
+    "كتورّي": ["katwarri", "katwarri", "it shows / displays"],
+    "علامة": ["ʿalama", "3alama", "mark / sign"],
+    "مؤقتة": ["muʾaqqata", "mu2a99ata", "temporary (fem.)"],
+    "العلامات": ["əl-ʿalamat", "l-3alamat", "the markers"],
+    "كتستعمل": ["katstaʿmel", "katsta3mel", "it uses"],
+    "الدور": ["əd-dor", "d-dor", "the round"],
+    "جا": ["ža", "ja", "it came / comes (from)"],
+    "منو": ["mennu", "mennou", "from it"],
+    "زائد": ["zaʾid", "za2id", "plus"],
+    "الخاسر": ["əl-xaser", "l-khaser", "the loser"],
+    "مثال": ["mital", "mital", "example"],
+    "الحالة": ["əl-ḥala", "l-7ala", "the status"],
+    "دقيقة": ["daqiqa", "da9i9a", "minute"],
+    "حمرا": ["ḥamra", "7amra", "red (fem.)"],
+    "تاريخ": ["tarix", "tarikh", "date"],
+    "المبرمج": ["əl-mubarmaž", "l-mbarmaj", "the scheduled"],
+    "الأسماء": ["əl-ʾasmaʾ", "l-asma2", "the names"],
+    "المايلة": ["əl-mayla", "l-mayla", "the italic / slanted"],
+    "الرمادية": ["ər-ramadiyya", "r-ramadiyya", "the gray"],
+    "هي": ["hiya", "hiya", "are / they (fem.)"],
+    "خانات": ["xanat", "khanat", "slots / cells"],
+    "ماتحدّد": ["matḥeddad", "mat7eddad", "not decided"],
+    "منتخبها": ["muntaxabha", "montakhabha", "its team"],
+    "كاينين": ["kaynin", "kaynin", "there are"],
+    "ماتشات": ["matšat", "matchat", "matches"],
+    "مباشرين": ["mubaširin", "mubashirin", "live (pl.)"],
+    "المعطيات": ["əl-muʿṭiyat", "l-mou3tiyat", "the data"],
+    "اللغة": ["əl-luġa", "l-lugha", "the language"],
+    "تعلّم": ["tʿellem", "t3ellem", "learn"],
+    "الدارجة": ["əd-dariža", "d-darija", "Darija (Moroccan Arabic)"],
+    "دليل": ["dalil", "dalil", "guide"],
+    "النطق": ["ən-nuṭq", "n-nout9", "the pronunciation"]
+  };
+
+  const GLOSS_AR = /[ء-غـ-يً-ْٰٱ]+/g;
+  const GLOSS_SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, SELECT: 1, OPTION: 1, CODE: 1 };
+  function glossEscHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function glossEscAttr(s) { return glossEscHtml(s).replace(/"/g, "&quot;"); }
+  function glossTip(g) { return glossEscAttr("🗣 " + g[0] + "\n⌨ " + g[1] + "\n→ " + g[2]); }
+  // Wrap known Darija words/expressions in a text string; returns HTML, or null if nothing matched.
+  function glossifyText(text) {
+    const words = []; let m; GLOSS_AR.lastIndex = 0;
+    while ((m = GLOSS_AR.exec(text))) words.push({ s: m.index, e: m.index + m[0].length });
+    if (!words.length) return null;
+    let out = "", cursor = 0, i = 0, changed = false;
+    while (i < words.length) {
+      let hit = null, span = null;
+      for (let k = Math.min(4, words.length - i); k >= 1; k--) {
+        const start = words[i].s, end = words[i + k - 1].e;
+        const key = text.slice(start, end).replace(/\s+/g, " ").trim();
+        if (GLOSS[key]) { hit = GLOSS[key]; span = { start, end, k }; break; }
+      }
+      if (hit) {
+        out += glossEscHtml(text.slice(cursor, span.start));
+        out += '<span class="gloss" data-tip="' + glossTip(hit) + '">' + glossEscHtml(text.slice(span.start, span.end)) + "</span>";
+        cursor = span.end; i += span.k; changed = true;
+      } else { i++; }
+    }
+    if (!changed) return null;
+    out += glossEscHtml(text.slice(cursor));
+    return out;
+  }
+  function glossNode(node) {
+    const p = node.parentNode;
+    if (!p || p.nodeType !== 1 || GLOSS_SKIP[p.nodeName]) return;
+    if (p.closest(".gloss, .translit-guide")) return;
+    const html = glossifyText(node.nodeValue);
+    if (html == null) return;
+    const tpl = document.createElement("template");
+    tpl.innerHTML = html;
+    node.replaceWith(tpl.content);
+  }
+  function glossRoot(root) {
+    if (root.nodeType === 3) { glossNode(root); return; }
+    if (root.nodeType !== 1 || GLOSS_SKIP[root.nodeName]) return;
+    if (root.closest(".gloss, .translit-guide")) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = []; let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    nodes.forEach(glossNode);
+  }
+  let glossObs = null;
+  const GLOSS_OBS_CFG = { childList: true, subtree: true, characterData: true };
+  function startGloss() {
+    const main = document.querySelector(".wrap");
+    if (!main) return;
+    glossRoot(main);
+    if (!glossObs) glossObs = new MutationObserver(muts => {
+      glossObs.disconnect();
+      for (const mu of muts) {
+        if (mu.type === "characterData") glossNode(mu.target);
+        else mu.addedNodes.forEach(glossRoot);
+      }
+      glossObs.observe(main, GLOSS_OBS_CFG);
+    });
+    glossObs.observe(main, GLOSS_OBS_CFG);
+  }
+  function stopGloss() { if (glossObs) glossObs.disconnect(); }
 
   function applyI18n() {
     document.documentElement.lang = (lang === "ar" ? "ary" : lang);
@@ -599,7 +998,9 @@
   }
   function setLang(l) {
     lang = l; lsSet("wc-lang", l);
+    stopGloss();   // drop tooltips; the re-render below rewrites all text to the new language
     applyI18n(); renderTitle(); renderStatus(); renderThird(); renderBanner(lastMatches); renderBracket();
+    if (lang === "ar") startGloss();
     const sel = document.getElementById("lang"); if (sel) sel.value = l;
   }
 
@@ -1265,6 +1666,7 @@
   document.getElementById("lang").value = lang;
   applyI18n();
   renderTitle();
+  if (lang === "ar") startGloss();
   load();
   setInterval(tickCountdown, 250);
 </script>
