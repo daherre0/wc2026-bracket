@@ -269,9 +269,15 @@
 
   /* ---- Darija "learn as you read" tooltips (only when Darija is selected) ---- */
   .gloss { cursor: help; border-bottom: 1px dotted rgba(140,170,255,.55); }
-  .gloss[data-tip]:hover::after {
+  /* floating tooltip rendered on <body> so it is never clipped by an overflow
+     ancestor (scroll areas, accordions) or hidden behind another layer */
+  .gloss-pop {
+    position: fixed; z-index: 9999; display: none; pointer-events: none;
+    max-width: 280px; background: #0c1322; color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px;
+    font-size: 12px; line-height: 1.5; font-weight: 400;
     white-space: pre-line; text-align: left; direction: ltr;
-    max-width: 280px; font-size: 12px; line-height: 1.5; font-weight: 400;
+    box-shadow: 0 10px 30px rgba(0,0,0,.55);
   }
   /* the transliteration guide table at the top */
   .translit-guide table { border-collapse: collapse; width: 100%; font-size: 12.5px; margin: 6px 0 4px; }
@@ -357,7 +363,7 @@
       <details class="acc translit-guide">
         <summary data-i18n="translitSum">🗣️ Learn to read Darija — pronunciation guide</summary>
         <div class="acc-body">
-          <p>When <b>Darija (العربية - دارجة)</b> is selected, every Darija word in the page is <span class="gloss" data-tip="🗣 dāba&#10;⌨ daba&#10;→ now" style="cursor:help">underlined</span> — hover (or tap) it to see its pronunciation and meaning. Each tooltip shows three lines:</p>
+          <p>When <b>Darija (العربية - دارجة)</b> is selected, every Darija word in the page is <span class="gloss" data-gloss="🗣 dāba&#10;⌨ daba&#10;→ now">underlined</span> — hover (or tap) it to see its pronunciation and meaning. Each tooltip shows three lines:</p>
           <p class="legend-key">
             <span>🗣 <b>Academic</b> — scholarly phonemic transliteration (most accurate).</span><br>
             <span>⌨ <b>Arabizi</b> — the "chat alphabet" Moroccans actually type, using numbers for sounds with no Latin letter.</span><br>
@@ -944,7 +950,7 @@
       }
       if (hit) {
         out += glossEscHtml(text.slice(cursor, span.start));
-        out += '<span class="gloss" data-tip="' + glossTip(hit) + '">' + glossEscHtml(text.slice(span.start, span.end)) + "</span>";
+        out += '<span class="gloss" data-gloss="' + glossTip(hit) + '">' + glossEscHtml(text.slice(span.start, span.end)) + "</span>";
         cursor = span.end; i += span.k; changed = true;
       } else { i++; }
     }
@@ -987,7 +993,37 @@
     });
     glossObs.observe(main, GLOSS_OBS_CFG);
   }
-  function stopGloss() { if (glossObs) glossObs.disconnect(); }
+  function stopGloss() { if (glossObs) glossObs.disconnect(); hideGlossPop(); }
+
+  // Floating tooltip on <body>: works inside titles, accordion summaries and
+  // scroll areas where a CSS ::after tooltip would be clipped or hidden.
+  let glossPop = null;
+  function hideGlossPop() { if (glossPop) glossPop.style.display = "none"; }
+  function showGlossPop(el) {
+    const txt = el.getAttribute("data-gloss");
+    if (!txt) return;
+    if (!glossPop) { glossPop = document.createElement("div"); glossPop.className = "gloss-pop"; document.body.appendChild(glossPop); }
+    glossPop.textContent = txt;       // newlines + white-space:pre-line render the 3 lines
+    glossPop.style.display = "block";
+    const r = el.getBoundingClientRect();
+    const pr = glossPop.getBoundingClientRect();
+    let top = r.top - pr.height - 9;
+    if (top < 6) top = r.bottom + 9;  // flip below when there's no room above (e.g. the title)
+    let left = r.left + r.width / 2 - pr.width / 2;
+    left = Math.max(6, Math.min(left, window.innerWidth - pr.width - 6));
+    glossPop.style.top = top + "px";
+    glossPop.style.left = left + "px";
+  }
+  function glossTarget(e) { return e.target && e.target.closest ? e.target.closest(".gloss") : null; }
+  document.addEventListener("mouseover", e => { const g = glossTarget(e); if (g) showGlossPop(g); });
+  document.addEventListener("mouseout", e => { if (glossTarget(e)) hideGlossPop(); });
+  document.addEventListener("click", e => {   // tap-to-toggle for touch devices
+    const g = glossTarget(e);
+    if (g) { e.preventDefault(); if (glossPop && glossPop.style.display === "block") hideGlossPop(); else showGlossPop(g); }
+    else hideGlossPop();
+  });
+  window.addEventListener("scroll", hideGlossPop, true);
+  window.addEventListener("resize", hideGlossPop);
 
   function applyI18n() {
     document.documentElement.lang = (lang === "ar" ? "ary" : lang);
