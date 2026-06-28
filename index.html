@@ -292,65 +292,86 @@
     color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums;
     text-align: right; white-space: nowrap;
   }
+
+  /* language selector */
+  #lang {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 9px; font-size: 13px; cursor: pointer;
+  }
+  #lang:hover { border-color: #3a486e; }
+
+  /* RTL (Arabic): prose reads right-to-left, but keep the data widgets LTR so
+     their layouts (table columns, bracket connectors, scores) don't mirror. */
+  html[dir="rtl"] body { text-align: right; }
+  html[dir="rtl"] .bracket-tree, html[dir="rtl"] table,
+  html[dir="rtl"] .live-match, html[dir="rtl"] .third-place,
+  html[dir="rtl"] .key-grid { direction: ltr; }
+  html[dir="rtl"] .acc-body { text-align: right; }
+  html[dir="rtl"] .acc-body ul, html[dir="rtl"] .acc-body ol { padding-right: 18px; padding-left: 0; }
 </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>🏆 World Cup 2026 — Third-Place Standings</h1>
-      <p class="sub">Ranking of the third-placed team in each group · live</p>
+      <h1 data-i18n="title">🏆 World Cup 2026 — Third-Place Standings</h1>
+      <p class="sub" data-i18n="subtitle">Ranking of the third-placed team in each group · live</p>
     </header>
 
     <div class="status-bar">
-      <span><span class="dot" id="dot" data-tip="Live data feed status" title="Live data feed status"></span> <span id="status">Loading…</span></span>
+      <span><span class="dot" id="dot" data-i18n-tip="feedTip"></span> <span id="status">Loading…</span></span>
       <span id="updated"></span>
-      <span>Next update in <span id="countdown">—</span>s</span>
-      <button id="refresh">↻ Refresh now</button>
+      <span id="nextUpdate"></span>
+      <button id="refresh" data-i18n="refresh">↻ Refresh now</button>
+      <select id="lang" aria-label="Language" data-i18n-tip="langLabel" title="Language">
+        <option value="en">English</option>
+        <option value="es">Español</option>
+        <option value="ar">العربية (دارجة)</option>
+      </select>
     </div>
 
     <div class="live-banner" id="liveBanner" style="display:none">
-      <h2><span class="dot" id="liveDot" data-tip="Green = a match is live now; red = none live" title="Green = a match is live now; red = none live"></span> Matches today</h2>
+      <h2><span class="dot" id="liveDot" data-i18n-tip="liveDotTip"></span> <span data-i18n="matchesToday">Matches today</span></h2>
       <div id="liveMatches"></div>
     </div>
 
-    <p class="legend">
+    <p class="legend" data-i18n-html="legend">
       The <b>top 8</b> of the 12 third-placed teams advance to the Round of 32.
       The dashed gold line is the qualification cut-off. Hover any abbreviation for what it means.
     </p>
 
     <div class="src-toggle">
-      <span class="src-label">Third-place table:</span>
+      <span class="src-label" data-i18n="srcLabel">Third-place table:</span>
       <span class="src-seg">
-        <button class="src-btn active" id="srcEspn" data-tip="Official ranking exactly as ESPN publishes it" title="ESPN official standings">ESPN official</button>
-        <button class="src-btn" id="srcCalc" data-tip="Recomputed live from match results, including in-progress games" title="Calculated from live results">Live calculated</button>
+        <button class="src-btn active" id="srcEspn" data-i18n="espnOfficial" data-i18n-tip="espnOfficialTip">ESPN official</button>
+        <button class="src-btn" id="srcCalc" data-i18n="liveCalc" data-i18n-tip="liveCalcTip">Live calculated</button>
       </span>
       <span class="src-note" id="srcNote">Official ranking exactly as ESPN publishes it.</span>
     </div>
 
     <div id="container">
-      <div class="msg">Fetching live data…</div>
+      <div class="msg" data-i18n="fetching">Fetching live data…</div>
     </div>
 
     <div class="rules">
       <details class="acc bracket-acc" open>
-        <summary>🗺️ Knockout bracket — tournament tree</summary>
+        <summary data-i18n="brkSummary">🗺️ Knockout bracket — tournament tree</summary>
         <div class="acc-body">
           <div class="src-toggle" style="margin-bottom: 12px">
-            <span class="src-label">Empty slots:</span>
+            <span class="src-label" data-i18n="emptySlots">Empty slots:</span>
             <span class="src-seg">
-              <button class="src-btn active" id="brkConfirmed" data-tip="Show only confirmed teams; leave undecided slots as placeholders" title="Confirmed only">Confirmed</button>
-              <button class="src-btn" id="brkProjected" data-tip="Advance teams only from games already played or in progress (current score). Upcoming matches stay TBD." title="Projected from live results">Projected (live)</button>
+              <button class="src-btn active" id="brkConfirmed" data-i18n="confirmed" data-i18n-tip="confirmedTip">Confirmed</button>
+              <button class="src-btn" id="brkProjected" data-i18n="projected" data-i18n-tip="projectedTip">Projected (live)</button>
             </span>
           </div>
-          <div id="bracket"><div class="msg">Loading bracket…</div></div>
+          <div id="bracket"><div class="msg" data-i18n="loadingBracket">Loading bracket…</div></div>
         </div>
       </details>
     </div>
 
     <div class="rules">
       <details class="acc">
-        <summary>How teams are classified &amp; qualify</summary>
-        <div class="acc-body">
+        <summary data-i18n="acc1Sum">How teams are classified &amp; qualify</summary>
+        <div class="acc-body" data-i18n-html="acc1Body">
           <ul>
             <li>The 48 teams are split into <b>12 groups of 4</b> (A–L). Each team plays the other three once.</li>
             <li>Match points: <b>3 for a win, 1 for a draw, 0 for a loss</b>.</li>
@@ -363,8 +384,8 @@
       </details>
 
       <details class="acc">
-        <summary>Tiebreakers (applied in order)</summary>
-        <div class="acc-body">
+        <summary data-i18n="acc2Sum">Tiebreakers (applied in order)</summary>
+        <div class="acc-body" data-i18n-html="acc2Body">
           When teams are level, FIFA separates them by:
           <ol>
             <li>Most <b>points</b></li>
@@ -377,8 +398,8 @@
       </details>
 
       <details class="acc">
-        <summary>Column key (abbreviations)</summary>
-        <div class="acc-body">
+        <summary data-i18n="acc3Sum">Column key (abbreviations)</summary>
+        <div class="acc-body" data-i18n-html="acc3Body">
           <div class="key-grid">
             <span class="k">#</span><span>Rank among the 12 third-placed teams</span>
             <span class="k">Grp</span><span>Group the team finished 3rd in</span>
@@ -397,8 +418,8 @@
       </details>
 
       <details class="acc">
-        <summary>Reading the bracket</summary>
-        <div class="acc-body">
+        <summary data-i18n="acc4Sum">Reading the bracket</summary>
+        <div class="acc-body" data-i18n-html="acc4Body">
           <ul>
             <li>The bracket lists every knockout tie. A real team appears once its group result is final; until then the slot shows a placeholder.</li>
             <li>Placeholders use the feeding round: <b>R32 / R16 / QF / SF</b>, plus <b>W</b> (winner) or <b>L</b> (loser). Example: <b>R32 1 W</b> = the winner of Round-of-32 match 1.</li>
@@ -408,7 +429,7 @@
       </details>
     </div>
 
-    <footer>
+    <footer data-i18n-html="footer">
       Auto-refreshes every 20s · Data: <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener">ESPN</a>
       · Tiebreakers: points → goal difference → goals scored
     </footer>
@@ -423,10 +444,167 @@
   const QUALIFY_SPOTS = 8; // best 8 of 12 third-placed teams reach the Round of 32
   const REFRESH_MS = 20000;
 
-  function setStatus(text, isError) {
-    document.getElementById("status").textContent = text;
-    document.getElementById("dot").classList.toggle("error", !!isError);
+  // ---- i18n: English / Español / Moroccan Arabic (Darija) --------------------
+  const T = {
+    en: {
+      title: "🏆 World Cup 2026 — Third-Place Standings",
+      subtitle: "Ranking of the third-placed team in each group · live",
+      refresh: "↻ Refresh now", feedTip: "Live data feed status", matchesToday: "Matches today",
+      legend: 'The <b>top 8</b> of the 12 third-placed teams advance to the Round of 32. The dashed gold line is the qualification cut-off. Hover any abbreviation for what it means.',
+      srcLabel: "Third-place table:", espnOfficial: "ESPN official", espnOfficialTip: "Official ranking exactly as ESPN publishes it",
+      liveCalc: "Live calculated", liveCalcTip: "Recomputed live from match results, including in-progress games",
+      srcNoteEspn: "Official ranking exactly as ESPN publishes it.",
+      srcNoteCalc: "Computed live from match results, including in-progress games — may differ from ESPN.",
+      fetching: "Fetching live data…",
+      emptyMsg: "No third-placed teams available yet. Group standings appear once group matches are underway.",
+      hTeam: "Team", tipRank: "Rank among the 12 third-placed teams", tipGrp: "Group the team finished 3rd in",
+      tipP: "Matches played", tipW: "Wins", tipD: "Draws", tipL: "Losses",
+      tipGF: "Goals for (scored)", tipGA: "Goals against (conceded)", tipGD: "Goal difference (GF − GA)",
+      tipPts: "Points: 3 for a win, 1 for a draw, 0 for a loss", qTip: "Currently in a top-8 qualifying spot",
+      rankTipQ: "Currently qualifying (top 8)", rankTipNo: "Currently outside the top 8", grpTagTip: "Finished 3rd in Group {g}",
+      liveDotTip: "Green = a match is live now; red = none live",
+      stLoading: "Loading…", stUpdating: "Updating…", stLive: "Live", stLiveN: "Live · {n} in progress",
+      stOffline: "Offline — couldn't reach ESPN", updated: "Updated", nextUpdate: "Next update in {s}s",
+      couldNotLoad: "Could not load live data. It will retry automatically.",
+      ft: "FT", scheduled: "Scheduled", vs: "vs",
+      tipLive: "Match in progress (current minute)", tipDone: "Full time — match finished", tipSched: "Kick-off time — not started yet",
+      brkSummary: "🗺️ Knockout bracket — tournament tree", loadingBracket: "Loading bracket…",
+      emptySlots: "Empty slots:", confirmed: "Confirmed", confirmedTip: "Show only confirmed teams; leave undecided slots as placeholders",
+      projected: "Projected (live)", projectedTip: "Advance teams only from games already played or in progress (current score). Upcoming matches stay TBD.",
+      noteConfirmed: "📅 Kick-off times shown in your local timezone · 🏟️ = venue",
+      noteProjected: "🔮 Projected — filled only from games already played and those in progress (frozen at the current score). Upcoming matches stay TBD until they kick off.",
+      tbd: "TBD", prov: "PROV", provTip: "Provisional — depends on a result still in progress",
+      tipKick: "Kick-off in your local time", tipMatchProg: "Match in progress", tipFTwinner: "Full time — winner in bold",
+      r32: "Round of 32", r16: "Round of 16", qf: "Quarter-finals", sf: "Semi-finals", final: "Final", third: "Third-place play-off",
+      acc1Sum: "How teams are classified & qualify",
+      acc1Body: `<ul><li>The 48 teams are split into <b>12 groups of 4</b> (A–L). Each team plays the other three once.</li><li>Match points: <b>3 for a win, 1 for a draw, 0 for a loss</b>.</li><li>The <b>top 2 of every group</b> qualify automatically → <b>24 teams</b>.</li><li>The <b>8 best third-placed teams</b> across all 12 groups also advance → completing the <b>32-team Round of 32</b>.</li><li><b>This table ranks those 12 third-placed teams.</b> The 8 above the gold line are currently in qualifying positions (marked <span class="qbadge" style="cursor:default">Q</span>); the bottom 4 are eliminated as it stands.</li><li>Standings update live, so positions can change while matches are in progress.</li></ul>`,
+      acc2Sum: "Tiebreakers (applied in order)",
+      acc2Body: `When teams are level, FIFA separates them by:<ol><li>Most <b>points</b></li><li>Best <b>goal difference</b> (GF − GA)</li><li>Most <b>goals scored</b> (GF)</li><li>Then official criteria: head-to-head record, disciplinary/fair-play points, and finally drawing of lots.</li></ol>This page ranks by the first three; the order <b>within</b> each group comes straight from ESPN's official standings.`,
+      acc3Sum: "Column key (abbreviations)",
+      acc3Body: `<div class="key-grid"><span class="k">#</span><span>Rank among the 12 third-placed teams</span><span class="k">Grp</span><span>Group the team finished 3rd in</span><span class="k">P</span><span>Matches played</span><span class="k">W</span><span>Wins</span><span class="k">D</span><span>Draws</span><span class="k">L</span><span>Losses</span><span class="k">GF</span><span>Goals for (scored)</span><span class="k">GA</span><span>Goals against (conceded)</span><span class="k">GD</span><span>Goal difference (GF − GA)</span><span class="k">Pts</span><span>Points (3 win / 1 draw / 0 loss)</span><span class="k">Q</span><span>Currently in a top-8 qualifying spot</span><span class="k">FT</span><span>Full time — match finished</span></div>`,
+      acc4Sum: "Reading the bracket",
+      acc4Body: `<ul><li>The bracket lists every knockout tie. A real team appears once its group result is final; until then the slot shows a placeholder.</li><li>Placeholders use the feeding round: <b>R32 / R16 / QF / SF</b>, plus <b>W</b> (winner) or <b>L</b> (loser). Example: <b>R32 1 W</b> = the winner of Round-of-32 match 1.</li><li>Tie status: a red minute = <b>live</b>, <b>FT</b> = finished (winner in bold), a date = scheduled kick-off. Italic grey names are slots whose team isn't decided yet.</li></ul>`,
+      footer: 'Auto-refreshes every 20s · Data: <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener">ESPN</a> · Tiebreakers: points → goal difference → goals scored',
+      langLabel: "Language"
+    },
+    es: {
+      title: "🏆 Mundial 2026 — Clasificación de terceros puestos",
+      subtitle: "Clasificación del tercer puesto de cada grupo · en vivo",
+      refresh: "↻ Actualizar", feedTip: "Estado de la fuente de datos en vivo", matchesToday: "Partidos de hoy",
+      legend: 'Los <b>8 mejores</b> de los 12 terceros puestos avanzan a los dieciseisavos de final. La línea dorada discontinua es el corte de clasificación. Pasa el cursor sobre cualquier abreviatura para ver su significado.',
+      srcLabel: "Tabla de terceros:", espnOfficial: "Oficial de ESPN", espnOfficialTip: "Clasificación oficial tal como la publica ESPN",
+      liveCalc: "Calculado en vivo", liveCalcTip: "Recalculado en vivo a partir de los resultados, incluidos partidos en curso",
+      srcNoteEspn: "Clasificación oficial tal como la publica ESPN.",
+      srcNoteCalc: "Calculado en vivo a partir de los resultados, incluidos los partidos en curso — puede diferir de ESPN.",
+      fetching: "Cargando datos en vivo…",
+      emptyMsg: "Aún no hay terceros puestos. La clasificación aparece cuando empiezan los partidos de grupo.",
+      hTeam: "Equipo", tipRank: "Posición entre los 12 terceros puestos", tipGrp: "Grupo en el que quedó 3.º",
+      tipP: "Partidos jugados", tipW: "Victorias", tipD: "Empates", tipL: "Derrotas",
+      tipGF: "Goles a favor", tipGA: "Goles en contra", tipGD: "Diferencia de goles (GF − GA)",
+      tipPts: "Puntos: 3 por victoria, 1 por empate, 0 por derrota", qTip: "Actualmente en puesto de clasificación (top 8)",
+      rankTipQ: "Clasificando actualmente (top 8)", rankTipNo: "Actualmente fuera del top 8", grpTagTip: "Quedó 3.º en el Grupo {g}",
+      liveDotTip: "Verde = hay un partido en vivo; rojo = ninguno",
+      stLoading: "Cargando…", stUpdating: "Actualizando…", stLive: "En vivo", stLiveN: "En vivo · {n} en curso",
+      stOffline: "Sin conexión — no se pudo contactar con ESPN", updated: "Actualizado", nextUpdate: "Próxima actualización en {s}s",
+      couldNotLoad: "No se pudieron cargar los datos en vivo. Se reintentará automáticamente.",
+      ft: "FIN", scheduled: "Programado", vs: "vs",
+      tipLive: "Partido en curso (minuto actual)", tipDone: "Tiempo completo — partido terminado", tipSched: "Hora de inicio — aún no empieza",
+      brkSummary: "🗺️ Cuadro eliminatorio — árbol del torneo", loadingBracket: "Cargando el cuadro…",
+      emptySlots: "Casillas vacías:", confirmed: "Confirmado", confirmedTip: "Mostrar solo equipos confirmados; dejar las casillas indecisas como marcadores",
+      projected: "Proyectado (en vivo)", projectedTip: "Avanzar equipos solo de partidos ya jugados o en curso (marcador actual). Los próximos quedan por definir.",
+      noteConfirmed: "📅 Horarios en tu zona horaria local · 🏟️ = estadio",
+      noteProjected: "🔮 Proyectado — solo con partidos ya jugados y en curso (congelados al marcador actual). Los próximos quedan por definir hasta que empiecen.",
+      tbd: "Por definir", prov: "PROV", provTip: "Provisional — depende de un resultado aún en curso",
+      tipKick: "Inicio en tu hora local", tipMatchProg: "Partido en curso", tipFTwinner: "Tiempo completo — ganador en negrita",
+      r32: "Dieciseisavos", r16: "Octavos", qf: "Cuartos", sf: "Semifinales", final: "Final", third: "Tercer puesto",
+      acc1Sum: "Cómo se clasifican y avanzan los equipos",
+      acc1Body: `<ul><li>Los 48 equipos se reparten en <b>12 grupos de 4</b> (A–L). Cada equipo juega una vez contra los otros tres.</li><li>Puntos por partido: <b>3 por victoria, 1 por empate, 0 por derrota</b>.</li><li>Los <b>2 primeros de cada grupo</b> se clasifican automáticamente → <b>24 equipos</b>.</li><li>Los <b>8 mejores terceros</b> de los 12 grupos también avanzan → completando los <b>dieciseisavos de 32 equipos</b>.</li><li><b>Esta tabla clasifica a esos 12 terceros puestos.</b> Los 8 por encima de la línea dorada están en puestos de clasificación (marcados con <span class="qbadge" style="cursor:default">Q</span>); los 4 últimos quedan eliminados por ahora.</li><li>La clasificación se actualiza en vivo, así que las posiciones pueden cambiar mientras hay partidos en curso.</li></ul>`,
+      acc2Sum: "Criterios de desempate (en orden)",
+      acc2Body: `Cuando los equipos están igualados, la FIFA los separa por:<ol><li>Más <b>puntos</b></li><li>Mejor <b>diferencia de goles</b> (GF − GA)</li><li>Más <b>goles a favor</b> (GF)</li><li>Luego criterios oficiales: enfrentamiento directo, puntos de juego limpio y, por último, sorteo.</li></ol>Esta página ordena por los tres primeros; el orden <b>dentro</b> de cada grupo viene directamente de la clasificación oficial de ESPN.`,
+      acc3Sum: "Leyenda de columnas (abreviaturas)",
+      acc3Body: `<div class="key-grid"><span class="k">#</span><span>Posición entre los 12 terceros puestos</span><span class="k">Grp</span><span>Grupo en el que quedó 3.º</span><span class="k">P</span><span>Partidos jugados</span><span class="k">W</span><span>Victorias</span><span class="k">D</span><span>Empates</span><span class="k">L</span><span>Derrotas</span><span class="k">GF</span><span>Goles a favor</span><span class="k">GA</span><span>Goles en contra</span><span class="k">GD</span><span>Diferencia de goles (GF − GA)</span><span class="k">Pts</span><span>Puntos (3 victoria / 1 empate / 0 derrota)</span><span class="k">Q</span><span>En puesto de clasificación (top 8)</span><span class="k">FT</span><span>Tiempo completo — partido terminado</span></div>`,
+      acc4Sum: "Cómo leer el cuadro",
+      acc4Body: `<ul><li>El cuadro muestra cada eliminatoria. Un equipo real aparece cuando su grupo termina; hasta entonces la casilla muestra un marcador.</li><li>Los marcadores usan la ronda de origen: <b>R32 / R16 / QF / SF</b>, más <b>W</b> (ganador) o <b>L</b> (perdedor). Ejemplo: <b>R32 1 W</b> = el ganador del partido 1 de dieciseisavos.</li><li>Estado: un minuto en rojo = <b>en vivo</b>, <b>FT</b> = terminado (ganador en negrita), una fecha = inicio programado. Los nombres en cursiva gris son casillas cuyo equipo aún no está decidido.</li></ul>`,
+      footer: 'Se actualiza cada 20s · Datos: <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener">ESPN</a> · Desempates: puntos → diferencia de goles → goles a favor',
+      langLabel: "Idioma"
+    },
+    ar: {
+      title: "🏆 كأس العالم 2026 — ترتيب أصحاب المركز الثالث",
+      subtitle: "ترتيب المنتخب صاحب المركز الثالث ف كل مجموعة · مباشر",
+      refresh: "↻ حدّث دابا", feedTip: "حالة مصدر البيانات المباشر", matchesToday: "مباريات اليوم",
+      legend: 'أحسن <b>8</b> منتخبات من بين 12 صاحب المركز الثالث كيتأهلو لدور الـ32. الخط الذهبي المقطّع هو حد التأهل. دوز الفأرة على أي اختصار باش تعرف معناه.',
+      srcLabel: "جدول أصحاب المركز الثالث:", espnOfficial: "الرسمي د ESPN", espnOfficialTip: "الترتيب الرسمي بحال ما كتنشرو ESPN",
+      liveCalc: "محسوب مباشر", liveCalcTip: "محسوب مباشر من نتائج المباريات، بما فيها اللي خدّامة",
+      srcNoteEspn: "الترتيب الرسمي بحال ما كتنشرو ESPN.",
+      srcNoteCalc: "محسوب مباشر من نتائج المباريات، بما فيها اللي خدّامة دابا — يمكن يختلف على ESPN.",
+      fetching: "كيجيب البيانات المباشرة…",
+      emptyMsg: "مازال ماكايناش أصحاب المركز الثالث. الترتيب كيبان منين كيبداو مباريات المجموعات.",
+      hTeam: "المنتخب", tipRank: "الترتيب بين 12 صاحب المركز الثالث", tipGrp: "المجموعة اللي سالا فيها ثالث",
+      tipP: "المباريات الملعوبة", tipW: "الفوزات", tipD: "التعادلات", tipL: "الخسارات",
+      tipGF: "الأهداف المسجلة", tipGA: "الأهداف المستقبلة", tipGD: "فرق الأهداف (GF − GA)",
+      tipPts: "النقط: 3 للفوز، 1 للتعادل، 0 للخسارة", qTip: "دابا ف مركز التأهل (أحسن 8)",
+      rankTipQ: "متأهل دابا (أحسن 8)", rankTipNo: "خارج أحسن 8 دابا", grpTagTip: "سالا ثالث ف المجموعة {g}",
+      liveDotTip: "أخضر = كاينة مباراة مباشرة؛ أحمر = حتى وحدة",
+      stLoading: "كيحمّل…", stUpdating: "كيحدّث…", stLive: "مباشر", stLiveN: "مباشر · {n} خدّامة",
+      stOffline: "ماكاينش الاتصال — تعذّر الوصول لـ ESPN", updated: "تحدّث", nextUpdate: "التحديث الجاي بعد {s}ث",
+      couldNotLoad: "تعذّر تحميل البيانات المباشرة. غادي يعاود وحدو.",
+      ft: "انتهت", scheduled: "مبرمجة", vs: "ضد",
+      tipLive: "المباراة خدّامة (الدقيقة دابا)", tipDone: "الوقت كامل — المباراة سالات", tipSched: "وقت البداية — مازال ما بدات",
+      brkSummary: "🗺️ جدول الإقصائيات — شجرة البطولة", loadingBracket: "كيحمّل الجدول…",
+      emptySlots: "الخانات الفارغة:", confirmed: "مؤكّد", confirmedTip: "وري غير المنتخبات المؤكّدة؛ خلّي الخانات اللي مازال ماتحدّداتش فارغة",
+      projected: "متوقّع (مباشر)", projectedTip: "تأهيل المنتخبات غير من المباريات اللي تلعبات ولا خدّامة (النتيجة دابا). المباريات الجاية تبقى غير محدّدة.",
+      noteConfirmed: "📅 أوقات البداية بالتوقيت المحلي ديالك · 🏟️ = الملعب",
+      noteProjected: "🔮 متوقّع — معمور غير بالمباريات اللي تلعبات واللي خدّامة (مجمّدة على النتيجة دابا). المباريات الجاية تبقى غير محدّدة حتى تبدا.",
+      tbd: "غير محدّد", prov: "مؤقّت", provTip: "مؤقّت — كيتوقف على نتيجة مازال خدّامة",
+      tipKick: "البداية بالتوقيت المحلي ديالك", tipMatchProg: "المباراة خدّامة", tipFTwinner: "الوقت كامل — الفائز بالخط الغليظ",
+      r32: "دور الـ32", r16: "دور الـ16", qf: "ربع النهائي", sf: "نصف النهائي", final: "النهائي", third: "مباراة المركز الثالث",
+      acc1Sum: "كيفاش كيتصنّفو وكيتأهلو المنتخبات",
+      acc1Body: `<ul><li>48 منتخب مقسّمين على <b>12 مجموعة د 4</b> (A–L). كل منتخب كيلعب مرة وحدة ضد الـ3 الآخرين.</li><li>النقط: <b>3 للفوز، 1 للتعادل، 0 للخسارة</b>.</li><li>الـ<b>2 الأوائل د كل مجموعة</b> كيتأهلو مباشرة → <b>24 منتخب</b>.</li><li>الـ<b>8 أحسن أصحاب المركز الثالث</b> من 12 مجموعة كيتأهلو حتا هوما → باش يكمل <b>دور الـ32</b>.</li><li><b>هاد الجدول كيرتّب هاد 12 صاحب المركز الثالث.</b> الـ8 اللي فوق الخط الذهبي ف مراكز التأهل (معلّمين بـ <span class="qbadge" style="cursor:default">Q</span>)؛ الـ4 د اللخر خارجين دابا.</li><li>الترتيب كيتحدّث مباشرة، إيوا المراكز يمكن تتبدّل وقت اللي المباريات خدّامة.</li></ul>`,
+      acc2Sum: "معايير كسر التعادل (بالترتيب)",
+      acc2Body: `ملي كيتعادلو المنتخبات، الفيفا كيفرّق بيناتهم بـ:<ol><li>أكثر <b>نقط</b></li><li>أحسن <b>فرق أهداف</b> (GF − GA)</li><li>أكثر <b>أهداف مسجلة</b> (GF)</li><li>من بعد معايير رسمية: المواجهة المباشرة، نقط اللعب النظيف، وفاللخر القرعة.</li></ol>هاد الصفحة كترتّب بالتلاتة الأوائل؛ الترتيب <b>داخل</b> كل مجموعة كيجي نيشان من الترتيب الرسمي د ESPN.`,
+      acc3Sum: "مفتاح الأعمدة (الاختصارات)",
+      acc3Body: `<div class="key-grid"><span class="k">#</span><span>الترتيب بين 12 صاحب المركز الثالث</span><span class="k">Grp</span><span>المجموعة اللي سالا فيها ثالث</span><span class="k">P</span><span>المباريات الملعوبة</span><span class="k">W</span><span>الفوزات</span><span class="k">D</span><span>التعادلات</span><span class="k">L</span><span>الخسارات</span><span class="k">GF</span><span>الأهداف المسجلة</span><span class="k">GA</span><span>الأهداف المستقبلة</span><span class="k">GD</span><span>فرق الأهداف (GF − GA)</span><span class="k">Pts</span><span>النقط (3 فوز / 1 تعادل / 0 خسارة)</span><span class="k">Q</span><span>ف مركز التأهل (أحسن 8)</span><span class="k">FT</span><span>الوقت كامل — المباراة سالات</span></div>`,
+      acc4Sum: "كيفاش تقرا الجدول",
+      acc4Body: `<ul><li>الجدول كيبيّن كل مواجهة د الإقصائيات. المنتخب الحقيقي كيبان ملي كتسالا مجموعتو؛ قبل من هادشي الخانة كتورّي علامة مؤقتة.</li><li>العلامات كتستعمل الدور اللي جا منو: <b>R32 / R16 / QF / SF</b>، زائد <b>W</b> (الفائز) ولا <b>L</b> (الخاسر). مثال: <b>R32 1 W</b> = الفائز ف ماتش 1 د دور الـ32.</li><li>الحالة: دقيقة حمرا = <b>مباشر</b>، <b>FT</b> = سالا (الفائز بالخط الغليظ)، تاريخ = وقت البداية المبرمج. الأسماء المايلة الرمادية هي خانات مازال ماتحدّد منتخبها.</li></ul>`,
+      footer: 'كيتحدّث كل 20 ثانية · المعطيات: <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener">ESPN</a> · كسر التعادل: النقط ← فرق الأهداف ← الأهداف المسجلة',
+      langLabel: "اللغة"
+    }
+  };
+
+  let lang = lsGet("wc-lang", "en");
+  function t(k) { const o = T[lang] || T.en; return (k in o) ? o[k] : (k in T.en ? T.en[k] : k); }
+  function uiLocale() { return lang === "ar" ? "ar-MA" : (lang === "es" ? "es-ES" : "en-US"); }
+  const ROUND_KEY = { "Round of 32": "r32", "Round of 16": "r16", "Quarter-finals": "qf", "Semi-finals": "sf", "Final": "final", "Third-place play-off": "third" };
+  function roundName(n) { return ROUND_KEY[n] ? t(ROUND_KEY[n]) : n; }
+
+  function applyI18n() {
+    document.documentElement.lang = (lang === "ar" ? "ary" : lang);
+    document.documentElement.dir = (lang === "ar" ? "rtl" : "ltr");
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
+    document.querySelectorAll("[data-i18n-tip]").forEach(el => { const v = t(el.dataset.i18nTip); el.setAttribute("data-tip", v); el.setAttribute("title", v); });
   }
+  function setLang(l) {
+    lang = l; lsSet("wc-lang", l);
+    applyI18n(); renderStatus(); renderThird(); renderBanner(lastMatches); renderBracket();
+    const sel = document.getElementById("lang"); if (sel) sel.value = l;
+  }
+
+  // ---- Status (keyed so it can be re-rendered on language change) ----
+  const uiState = { statusKey: "stLoading", statusErr: false, statusN: 0, updatedAt: null };
+  function renderStatus() {
+    const s = uiState;
+    const txt = s.statusKey === "stLiveN" ? t("stLiveN").replace("{n}", s.statusN) : t(s.statusKey);
+    document.getElementById("status").textContent = txt;
+    document.getElementById("dot").classList.toggle("error", !!s.statusErr);
+    document.getElementById("updated").textContent = s.updatedAt
+      ? t("updated") + " " + s.updatedAt.toLocaleTimeString(uiLocale()) : "";
+  }
+  function setStatus(key, isError, n) {
+    uiState.statusKey = key; uiState.statusErr = !!isError; uiState.statusN = n || 0;
+    renderStatus();
+  }
+  let lastMatches = [];
 
   function todayYYYYMMDD() {
     const d = new Date();
@@ -555,43 +733,40 @@
     render(thirdState.mode === "calc" ? thirdState.calc : thirdState.official);
     document.getElementById("srcEspn").classList.toggle("active", thirdState.mode === "espn");
     document.getElementById("srcCalc").classList.toggle("active", thirdState.mode === "calc");
-    document.getElementById("srcNote").textContent = thirdState.mode === "calc"
-      ? "Computed live from match results, including in-progress games — may differ from ESPN."
-      : "Official ranking exactly as ESPN publishes it.";
+    document.getElementById("srcNote").textContent = thirdState.mode === "calc" ? t("srcNoteCalc") : t("srcNoteEspn");
   }
   function setMode(m) { thirdState.mode = m; lsSet("wc-third-src", m); renderThird(); }
 
   function render(thirds) {
     const container = document.getElementById("container");
     if (!thirds.length) {
-      container.innerHTML = '<div class="msg">No third-placed teams available yet. Group standings appear once group matches are underway.</div>';
+      container.innerHTML = `<div class="msg">${t("emptyMsg")}</div>`;
       return;
     }
-    const rows = thirds.map((t, i) => {
+    const rows = thirds.map((tm, i) => {
       const pos = i + 1;
       const qualifies = pos <= QUALIFY_SPOTS;
       const cls = [qualifies ? "qualify" : "", pos === QUALIFY_SPOTS ? "cutline" : ""].join(" ").trim();
-      const badge = t.badge ? `<img src="${t.badge}" alt="" onerror="this.style.display='none'">` : "";
-      const qtag = qualifies
-        ? '<span class="qbadge" data-tip="Currently in a top-8 qualifying spot" title="Currently in a top-8 qualifying spot">Q</span>'
-        : "";
-      const rankTip = qualifies ? "Currently qualifying (top 8)" : "Currently outside the top 8";
-      const gd = t.gd > 0 ? "+" + t.gd : "" + t.gd;
+      const badge = tm.badge ? `<img src="${tm.badge}" alt="" onerror="this.style.display='none'">` : "";
+      const qtag = qualifies ? `<span class="qbadge" data-tip="${t("qTip")}" title="${t("qTip")}">Q</span>` : "";
+      const rankTip = qualifies ? t("rankTipQ") : t("rankTipNo");
+      const grpTip = t("grpTagTip").replace("{g}", tm.group);
+      const gd = tm.gd > 0 ? "+" + tm.gd : "" + tm.gd;
       return `
         <tr class="${cls}">
           <td class="rank-col" title="${rankTip}">${pos}</td>
           <td class="team-col">
-            <span class="team-cell">${badge}<span class="team-name">${t.team}</span>${qtag}</span>
+            <span class="team-cell">${badge}<span class="team-name">${tm.team}</span>${qtag}</span>
           </td>
-          <td><span class="group-tag" data-tip="Finished 3rd in Group ${t.group}" title="Finished 3rd in Group ${t.group}">${t.group || "—"}</span></td>
-          <td>${t.played}</td>
-          <td>${t.win}</td>
-          <td>${t.draw}</td>
-          <td>${t.loss}</td>
-          <td>${t.gf}</td>
-          <td>${t.ga}</td>
+          <td><span class="group-tag" data-tip="${grpTip}" title="${grpTip}">${tm.group || "—"}</span></td>
+          <td>${tm.played}</td>
+          <td>${tm.win}</td>
+          <td>${tm.draw}</td>
+          <td>${tm.loss}</td>
+          <td>${tm.gf}</td>
+          <td>${tm.ga}</td>
           <td>${gd}</td>
-          <td class="pts">${t.pts}</td>
+          <td class="pts">${tm.pts}</td>
         </tr>`;
     }).join("");
 
@@ -599,17 +774,17 @@
       <table>
         <thead>
           <tr>
-            <th data-tip="Rank among the 12 third-placed teams" title="Rank among the 12 third-placed teams">#</th>
-            <th class="team-col">Team</th>
-            <th data-tip="Group the team finished 3rd in" title="Group the team finished 3rd in">Grp</th>
-            <th data-tip="Matches played" title="Matches played">P</th>
-            <th data-tip="Wins" title="Wins">W</th>
-            <th data-tip="Draws" title="Draws">D</th>
-            <th data-tip="Losses" title="Losses">L</th>
-            <th data-tip="Goals for (scored)" title="Goals for (scored)">GF</th>
-            <th data-tip="Goals against (conceded)" title="Goals against (conceded)">GA</th>
-            <th data-tip="Goal difference (GF − GA)" title="Goal difference (GF minus GA)">GD</th>
-            <th data-tip="Points: 3 for a win, 1 for a draw, 0 for a loss" title="Points: 3 win / 1 draw / 0 loss">Pts</th>
+            <th data-tip="${t("tipRank")}" title="${t("tipRank")}">#</th>
+            <th class="team-col">${t("hTeam")}</th>
+            <th data-tip="${t("tipGrp")}" title="${t("tipGrp")}">Grp</th>
+            <th data-tip="${t("tipP")}" title="${t("tipP")}">P</th>
+            <th data-tip="${t("tipW")}" title="${t("tipW")}">W</th>
+            <th data-tip="${t("tipD")}" title="${t("tipD")}">D</th>
+            <th data-tip="${t("tipL")}" title="${t("tipL")}">L</th>
+            <th data-tip="${t("tipGF")}" title="${t("tipGF")}">GF</th>
+            <th data-tip="${t("tipGA")}" title="${t("tipGA")}">GA</th>
+            <th data-tip="${t("tipGD")}" title="${t("tipGD")}">GD</th>
+            <th data-tip="${t("tipPts")}" title="${t("tipPts")}">Pts</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -647,10 +822,10 @@
 
     document.getElementById("liveMatches").innerHTML = matches.map(m => {
       const live = m.state === "in", done = m.state === "post";
-      const score = (live || done) ? `${m.hs} – ${m.as}` : "vs";
-      const label = live ? (m.detail || "LIVE") : (done ? "FT" : (m.detail || "Scheduled"));
+      const score = (live || done) ? `${m.hs} – ${m.as}` : t("vs");
+      const label = live ? (m.detail || "LIVE") : (done ? t("ft") : (m.detail || t("scheduled")));
       const pillCls = live ? "" : (done ? "done" : "scheduled");
-      const tip = live ? "Match in progress (current minute)" : (done ? "Full time — match finished" : "Kick-off time — not started yet");
+      const tip = live ? t("tipLive") : (done ? t("tipDone") : t("tipSched"));
       return `
         <div class="live-match">
           <span class="teams">${m.home} <span class="score">${score}</span> ${m.away}</span>
@@ -687,7 +862,7 @@
     .replace(/\bWinner\b/g, "W").replace(/\bLoser\b/g, "L");
 
   function fmtDay(iso) {
-    return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    return new Date(iso).toLocaleDateString(uiLocale(), { month: "short", day: "numeric" });
   }
   function fmtRange(a, b) {
     return a.slice(0, 10) === b.slice(0, 10) ? fmtDay(a) : fmtDay(a) + " – " + fmtDay(b);
@@ -701,8 +876,8 @@
   function fmtDateTime(iso) {
     const d = parseDate(iso);
     if (!d) return "";
-    const day = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+    const day = d.toLocaleDateString(uiLocale(), { month: "short", day: "numeric" });
+    const time = d.toLocaleTimeString(uiLocale(), { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
     return day + " · " + time;
   }
 
@@ -740,7 +915,7 @@
     const when = fmtDateTime(ev.date);
     const venueTip = vname ? (vname + (vcity ? " — " + vcity : "")) : "";
     return `<div class="g-meta">
-      ${when ? `<div class="g-when" data-tip="Kick-off in your local time" title="Local time">📅 ${when}</div>` : ""}
+      ${when ? `<div class="g-when" data-tip="${t("tipKick")}" title="${t("tipKick")}">📅 ${when}</div>` : ""}
       ${vname ? `<div class="g-venue" data-tip="${venueTip}" title="${venueTip}">🏟️ ${vname}${vcity ? " · " + vcity : ""}</div>` : ""}
     </div>`;
   }
@@ -765,8 +940,8 @@
 
     const meta = metaHtml(ev);
     let badge = "";
-    if (live) badge = `<span class="g-stat live" data-tip="Match in progress" title="Match in progress">${type.shortDetail || "LIVE"}</span>`;
-    else if (done) badge = `<span class="g-stat done" data-tip="Full time — winner in bold" title="Full time">FT</span>`;
+    if (live) badge = `<span class="g-stat live" data-tip="${t("tipMatchProg")}" title="${t("tipMatchProg")}">${type.shortDetail || "LIVE"}</span>`;
+    else if (done) badge = `<span class="g-stat done" data-tip="${t("tipFTwinner")}" title="${t("tipFTwinner")}">${t("ft")}</span>`;
     const foot = badge ? `<div class="g-foot">${badge}</div>` : "";
 
     return `<div class="game ${live ? "live" : ""}">${row(home)}${row(away)}${meta}${foot}</div>`;
@@ -868,16 +1043,16 @@
     // Upcoming match: show whoever has actually reached this slot (from a finished/live
     // feeder); no winner is highlighted because the match hasn't been played.
     const row = s => {
-      if (!s) return '<div class="g-row placeholder"><span class="nologo"></span><span class="nm">TBD</span></div>';
+      if (!s) return `<div class="g-row placeholder"><span class="nologo"></span><span class="nm">${t("tbd")}</span></div>`;
       const cls = ["g-row", s.projected ? "proj" : ""].join(" ").trim();
       const logo = s.logo
         ? `<img src="${s.logo}" alt="" onerror="this.outerHTML='<span class=&quot;nologo&quot;></span>'">`
         : '<span class="nologo"></span>';
-      return `<div class="${cls}">${logo}<span class="nm">${s.name || "TBD"}</span></div>`;
+      return `<div class="${cls}">${logo}<span class="nm">${s.name || t("tbd")}</span></div>`;
     };
     const anyProvisional = (match.home && match.home.projected) || (match.away && match.away.projected);
     const foot = anyProvisional
-      ? '<div class="g-foot"><span class="g-stat proj" data-tip="Provisional — depends on a result still in progress" title="Provisional">PROV</span></div>'
+      ? `<div class="g-foot"><span class="g-stat proj" data-tip="${t("provTip")}" title="${t("provTip")}">${t("prov")}</span></div>`
       : "";
     return `<div class="game proj-game">${row(match.home)}${row(match.away)}${metaHtml(match.ev)}${foot}</div>`;
   }
@@ -893,7 +1068,7 @@
     document.getElementById("brkProjected").classList.toggle("active", projected);
 
     if (!rounds || !rounds.some(r => r.events.length)) {
-      el.innerHTML = '<div class="msg">Bracket not available yet.</div>';
+      el.innerHTML = `<div class="msg">${t("loadingBracket")}</div>`;
       return;
     }
 
@@ -902,12 +1077,12 @@
       const proj = buildProjection(rounds, bracketState.comp);
       cols = proj.columns.map(c => {
         const matches = c.matches.map(m => `<div class="match">${projGameBox(m)}</div>`).join("");
-        return `<div class="round-col"><div class="rc-title">${c.name}</div><div class="matches">${matches}</div></div>`;
+        return `<div class="round-col"><div class="rc-title">${roundName(c.name)}</div><div class="matches">${matches}</div></div>`;
       }).join("");
       thirdHtml = proj.third
-        ? `<div class="third-place"><div class="rc-title">🥉 ${rounds[4].name}</div>${projGameBox(proj.third)}</div>`
+        ? `<div class="third-place"><div class="rc-title">🥉 ${roundName(rounds[4].name)}</div>${projGameBox(proj.third)}</div>`
         : "";
-      note = "🔮 Projected — filled only from games already played and those in progress (frozen at the current score). Upcoming matches stay TBD until they kick off.";
+      note = t("noteProjected");
     } else {
       const pick = (round, order) => order.map(n => round.events[n - 1]).filter(Boolean);
       const colDefs = [
@@ -919,14 +1094,14 @@
       ];
       cols = colDefs.map(c => {
         const matches = c.evs.map(ev => `<div class="match">${gameBox(ev)}</div>`).join("")
-          || '<div class="match"><div class="game"><div class="g-row placeholder"><span class="nologo"></span><span class="nm">TBD</span></div></div></div>';
-        return `<div class="round-col"><div class="rc-title">${c.name}</div><div class="matches">${matches}</div></div>`;
+          || `<div class="match"><div class="game"><div class="g-row placeholder"><span class="nologo"></span><span class="nm">${t("tbd")}</span></div></div></div>`;
+        return `<div class="round-col"><div class="rc-title">${roundName(c.name)}</div><div class="matches">${matches}</div></div>`;
       }).join("");
       const third = rounds[4];
       thirdHtml = (third && third.events.length)
-        ? `<div class="third-place"><div class="rc-title">🥉 ${third.name}</div>${gameBox(third.events[0])}</div>`
+        ? `<div class="third-place"><div class="rc-title">🥉 ${roundName(third.name)}</div>${gameBox(third.events[0])}</div>`
         : "";
-      note = "📅 Kick-off times shown in your local timezone · 🏟️ = venue";
+      note = t("noteConfirmed");
     }
 
     el.innerHTML = `<div class="bracket-note">${note}</div>
@@ -937,12 +1112,13 @@
   let nextRefreshAt = 0;
   function tickCountdown() {
     const secs = Math.max(0, Math.ceil((nextRefreshAt - Date.now()) / 1000));
-    document.getElementById("countdown").textContent = secs;
+    const el = document.getElementById("nextUpdate");
+    if (el) el.textContent = t("nextUpdate").replace("{s}", secs);
   }
 
   async function load() {
     nextRefreshAt = Date.now() + REFRESH_MS;
-    setStatus("Updating…", false);
+    setStatus("stUpdating", false);
     try {
       const [groups, matches, rounds, groupResults] = await Promise.all([
         fetchStandingsGroups(),
@@ -953,20 +1129,21 @@
       const comp = computeGroups(groups, groupResults);
       thirdState.official = officialThirds(groups);
       thirdState.calc = comp.thirds;
+      lastMatches = matches;
       renderThird();
       renderBanner(matches);
       if (rounds) bracketState.rounds = rounds;
       bracketState.comp = comp;
       renderBracket();
       const live = matches.filter(m => m.state === "in").length;
-      document.getElementById("updated").textContent = "Updated " + new Date().toLocaleTimeString();
-      setStatus(live ? `Live · ${live} in progress` : "Live", false);
+      uiState.updatedAt = new Date();
+      setStatus(live ? "stLiveN" : "stLive", false, live);
     } catch (err) {
       console.error(err);
-      setStatus("Offline — couldn't reach ESPN", true);
+      setStatus("stOffline", true);
       const c = document.getElementById("container");
       if (!c.querySelector("table")) {
-        c.innerHTML = '<div class="msg">Could not load live data. It will retry automatically.</div>';
+        c.innerHTML = `<div class="msg">${t("couldNotLoad")}</div>`;
       }
     }
   }
@@ -976,6 +1153,9 @@
   document.getElementById("srcCalc").addEventListener("click", () => setMode("calc"));
   document.getElementById("brkConfirmed").addEventListener("click", () => setBracketMode("confirmed"));
   document.getElementById("brkProjected").addEventListener("click", () => setBracketMode("projected"));
+  document.getElementById("lang").addEventListener("change", e => setLang(e.target.value));
+  document.getElementById("lang").value = lang;
+  applyI18n();
   load();
   setInterval(load, REFRESH_MS);
   setInterval(tickCountdown, 250);
