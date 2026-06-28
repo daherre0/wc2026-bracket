@@ -339,7 +339,7 @@
             <span class="src-label">Empty slots:</span>
             <span class="src-seg">
               <button class="src-btn active" id="brkConfirmed" data-tip="Show only confirmed teams; leave undecided slots as placeholders" title="Confirmed only">Confirmed</button>
-              <button class="src-btn" id="brkProjected" data-tip="Fill empty slots from live standings and predict each winner (better record, or the current live leader)" title="Projected from live results">Projected (live)</button>
+              <button class="src-btn" id="brkProjected" data-tip="Advance teams only from games already played or in progress (current score). Upcoming matches stay TBD." title="Projected from live results">Projected (live)</button>
             </span>
           </div>
           <div id="bracket"><div class="msg">Loading bracket…</div></div>
@@ -772,15 +772,7 @@
     return `<div class="game ${live ? "live" : ""}">${row(home)}${row(away)}${meta}${foot}</div>`;
   }
 
-  // ---- Projection: fill empty slots from live standings & predict winners ----
-  function strongerByRecord(a, b) {
-    if (!a) return b; if (!b) return a;
-    if ((a.pts || 0) !== (b.pts || 0)) return (a.pts || 0) > (b.pts || 0) ? a : b;
-    if ((a.gd || 0) !== (b.gd || 0)) return (a.gd || 0) > (b.gd || 0) ? a : b;
-    if ((a.gf || 0) !== (b.gf || 0)) return (a.gf || 0) > (b.gf || 0) ? a : b;
-    return (a.name || "").localeCompare(b.name || "") <= 0 ? a : b;
-  }
-
+  // ---- Projection: fill slots ONLY from matches actually played or in progress ----
   function buildProjection(rounds, comp) {
     const used = new Set();
     const r32 = rounds[0].events;
@@ -820,8 +812,10 @@
       return null;
     }
 
-    // Winner: actual result if finished; current leader if a knockout match is LIVE
-    // (partial result predicts next match); otherwise the better group-stage record.
+    // Winner ONLY from a real result: the actual winner if the match is finished, or
+    // the current leader if it's in progress ("as if it ended right now"). A match that
+    // hasn't kicked off — or a live match currently level — produces no winner (null),
+    // so the next round stays TBD. We never guess from group-stage form.
     function winnerOf(match) {
       const cs = (match.ev.competitions && match.ev.competitions[0].competitors) || [];
       const st = ((match.ev.status || {}).type || {}).state;
@@ -834,7 +828,7 @@
         const hs = parseInt(h && h.score, 10), as = parseInt(a && a.score, 10);
         if (!isNaN(hs) && !isNaN(as) && hs !== as) return fromCompetitor(hs > as ? h : a, st !== "post");
       }
-      return strongerByRecord(match.home, match.away);
+      return null; // not played, or live and level → no projected winner yet
     }
 
     const disp = (round, order) => order.map(n => round.events[n - 1]).filter(Boolean);
@@ -855,7 +849,7 @@
     const wsf = sfM.map(winnerOf);
     const finalM = advance(wsf, rounds[5], TREE_ORDER.final);
 
-    const loserOf = m => { if (!m || !m.home || !m.away) return (m && (m.home || m.away)) || null; return winnerOf(m) === m.home ? m.away : m.home; };
+    const loserOf = m => { if (!m || !m.home || !m.away) return null; const w = winnerOf(m); return w ? (w === m.home ? m.away : m.home) : null; };
     const thirdEv = rounds[4].events[0];
     const third = thirdEv ? { ev: thirdEv, home: loserOf(sfM[0]), away: loserOf(sfM[1]) } : null;
 
@@ -871,17 +865,21 @@
   function projGameBox(match) {
     const st = ((match.ev.status || {}).type || {}).state;
     if (st === "in" || st === "post") return gameBox(match.ev); // real teams & live/final scores
-    const winner = (match.home && match.away) ? strongerByRecord(match.home, match.away) : (match.home || match.away);
+    // Upcoming match: show whoever has actually reached this slot (from a finished/live
+    // feeder); no winner is highlighted because the match hasn't been played.
     const row = s => {
       if (!s) return '<div class="g-row placeholder"><span class="nologo"></span><span class="nm">TBD</span></div>';
-      const cls = ["g-row", s.projected ? "proj" : "", (winner && s === winner) ? "win" : ""].join(" ").trim();
+      const cls = ["g-row", s.projected ? "proj" : ""].join(" ").trim();
       const logo = s.logo
         ? `<img src="${s.logo}" alt="" onerror="this.outerHTML='<span class=&quot;nologo&quot;></span>'">`
         : '<span class="nologo"></span>';
       return `<div class="${cls}">${logo}<span class="nm">${s.name || "TBD"}</span></div>`;
     };
-    const badge = '<span class="g-stat proj" data-tip="Projected from live standings — better record / current live leader advances" title="Projected">PROJ</span>';
-    return `<div class="game proj-game">${row(match.home)}${row(match.away)}${metaHtml(match.ev)}<div class="g-foot">${badge}</div></div>`;
+    const anyProvisional = (match.home && match.home.projected) || (match.away && match.away.projected);
+    const foot = anyProvisional
+      ? '<div class="g-foot"><span class="g-stat proj" data-tip="Provisional — depends on a result still in progress" title="Provisional">PROV</span></div>'
+      : "";
+    return `<div class="game proj-game">${row(match.home)}${row(match.away)}${metaHtml(match.ev)}${foot}</div>`;
   }
 
   const bracketState = { mode: lsGet("wc-bracket", "confirmed"), rounds: null, comp: null };
@@ -909,7 +907,7 @@
       thirdHtml = proj.third
         ? `<div class="third-place"><div class="rc-title">🥉 ${rounds[4].name}</div>${projGameBox(proj.third)}</div>`
         : "";
-      note = "🔮 Projected — empty slots filled from live standings; winners predicted (better record, or the current live leader). Hypothetical.";
+      note = "🔮 Projected — filled only from games already played and those in progress (frozen at the current score). Upcoming matches stay TBD until they kick off.";
     } else {
       const pick = (round, order) => order.map(n => round.events[n - 1]).filter(Boolean);
       const colDefs = [
