@@ -930,29 +930,102 @@
     "النطق": ["ən-nuṭq", "n-nout9", "the pronunciation"]
   };
 
-  const GLOSS_AR = /[ء-غـ-يً-ْٰٱ]+/g;
+  // A token is either a digit run (ASCII or Arabic-Indic) or an Arabic-letter word.
+  const GLOSS_TOKEN = /([0-9٠-٩]+)|([ء-غـ-يً-ْٰٱ]+)/g;
   const GLOSS_SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, SELECT: 1, OPTION: 1, CODE: 1 };
+
+  // ---- Darija number speller: digits → Arabic-Indic + spoken-out-loud reading ----
+  // When Darija is selected, every number on the page is shown in Arabic-Indic
+  // numerals (2026 → ٢٠٢٦) and its tooltip reads the *whole* number out the way a
+  // Moroccan would say it (٢٠٢٦ → "ألفين و ستة و عشرين"). Each building block is a
+  // triple: [🗣 academic transliteration, ⌨ arabizi, Arabic-script spelling].
+  const N_ZERO  = ["sifr", "sifr", "صفر"];
+  const N_CONJ  = [" u ", " o ", " و "]; // "and", per column
+  const N_ONES  = [null,
+    ["waḥed", "wa7ed", "واحد"], ["žuž", "jouj", "جوج"], ["tlata", "tlata", "تلاتة"],
+    ["rebʿa", "reb3a", "ربعة"], ["xemsa", "khemsa", "خمسة"], ["setta", "setta", "ستة"],
+    ["sebʿa", "seb3a", "سبعة"], ["tmenya", "tmenya", "تمنية"], ["tesʿa", "tes3a", "تسعة"]];
+  const N_UNIT  = N_ONES.slice(); N_UNIT[2] = ["tnayn", "tnayn", "تنين"]; // 2 in compounds
+  const N_TEENS = [
+    ["ʿešra", "3echra", "عشرة"], ["ḥdaš", "7dash", "حضاش"], ["ṭnaš", "tnash", "طناش"],
+    ["tleṭṭaš", "tlettash", "تلطاش"], ["rbeʿṭaš", "rbe3tash", "ربعطاش"], ["xemsṭaš", "khemstash", "خمسطاش"],
+    ["seṭṭaš", "settash", "سطّاش"], ["sbeʿṭaš", "sbe3tash", "سبعطاش"], ["tmenṭaš", "tmentash", "تمنطاش"],
+    ["tseʿṭaš", "tse3tash", "تسعطاش"]];
+  const N_TENS  = [null, null,
+    ["ʿešrin", "3echrin", "عشرين"], ["tlatin", "tlatin", "تلاتين"], ["rebʿin", "reb3in", "ربعين"],
+    ["xemsin", "khemsin", "خمسين"], ["settin", "settin", "ستّين"], ["sebʿin", "seb3in", "سبعين"],
+    ["tmanin", "tmanin", "تمانين"], ["tesʿin", "tes3in", "تسعين"]];
+  const N_HUND  = [null,
+    ["mya", "mya", "مية"], ["myatayn", "myatayn", "ميتين"], ["tletmya", "tletmya", "تلتمية"],
+    ["rebʿmya", "reb3mya", "ربعمية"], ["xemsmya", "khemsmya", "خمسمية"], ["settemya", "settemya", "ستّمية"],
+    ["sebʿmya", "seb3mya", "سبعمية"], ["tmenmya", "tmenmya", "تمنمية"], ["tesʿmya", "tes3mya", "تسعمية"]];
+
+  const AR_IND = "٠١٢٣٤٥٦٧٨٩";
+  function toArabicDigits(s) { return s.replace(/[0-9]/g, d => AR_IND[+d]); }
+  function toAsciiDigits(s)  { return s.replace(/[٠-٩]/g, d => "" + AR_IND.indexOf(d)); }
+  // Join an array of triples column-by-column with the "and" conjunction.
+  function nJoin(parts) { return [0, 1, 2].map(c => parts.map(p => p[c]).join(N_CONJ[c])); }
+  function spell2(n) { // 1–99
+    if (n < 10) return N_ONES[n];               // standalone 2 = žuž
+    if (n < 20) return N_TEENS[n - 10];
+    const u = n % 10, ten = Math.floor(n / 10);
+    return u === 0 ? N_TENS[ten] : nJoin([N_UNIT[u], N_TENS[ten]]); // compound 2 = tnayn; "setta u ʿešrin"
+  }
+  function spellThousands(d) {
+    if (d === 1) return ["alf", "alf", "ألف"];
+    if (d === 2) return ["alfayn", "alfayn", "ألفين"];
+    const o = N_ONES[d];
+    return [o[0] + " alaf", o[1] + " alaf", o[2] + " آلاف"];
+  }
+  function spellNumber(n) { // 0–9999
+    if (n === 0) return N_ZERO;
+    const parts = [], th = Math.floor(n / 1000), rem = n % 1000;
+    if (th) parts.push(spellThousands(th));
+    const h = Math.floor(rem / 100), two = rem % 100;
+    if (h) parts.push(N_HUND[h]);
+    if (two) parts.push(spell2(two));
+    return nJoin(parts);
+  }
+  // Returns { disp: Arabic-Indic numerals, tip: [academic, arabizi, Arabic words] } or null.
+  function numberGloss(raw) {
+    const ascii = toAsciiDigits(raw);
+    if (!/^[0-9]+$/.test(ascii)) return null;
+    const v = parseInt(ascii, 10);
+    const trip = (ascii.length <= 4 && v <= 9999)
+      ? spellNumber(v)
+      : nJoin(ascii.split("").map(d => d === "0" ? N_ZERO : N_ONES[+d])); // huge: digit by digit
+    return { disp: toArabicDigits(ascii), tip: trip };
+  }
   function glossEscHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function glossEscAttr(s) { return glossEscHtml(s).replace(/"/g, "&quot;"); }
   function glossTip(g) { return glossEscAttr("🗣 " + g[0] + "\n⌨ " + g[1] + "\n→ " + g[2]); }
   // Wrap known Darija words/expressions in a text string; returns HTML, or null if nothing matched.
   function glossifyText(text) {
-    const words = []; let m; GLOSS_AR.lastIndex = 0;
-    while ((m = GLOSS_AR.exec(text))) words.push({ s: m.index, e: m.index + m[0].length });
-    if (!words.length) return null;
+    const toks = []; let m; GLOSS_TOKEN.lastIndex = 0;
+    while ((m = GLOSS_TOKEN.exec(text))) toks.push({ s: m.index, e: m.index + m[0].length, num: m[1] != null });
+    if (!toks.length) return null;
     let out = "", cursor = 0, i = 0, changed = false;
-    while (i < words.length) {
+    const wrap = (start, end, content, tip) => {
+      out += glossEscHtml(text.slice(cursor, start));
+      out += '<span class="gloss" data-gloss="' + glossTip(tip) + '">' + glossEscHtml(content) + "</span>";
+      cursor = end; changed = true;
+    };
+    while (i < toks.length) {
+      if (toks[i].num) {                          // a digit run → Arabic-Indic + spoken reading
+        const g = numberGloss(text.slice(toks[i].s, toks[i].e));
+        if (g) wrap(toks[i].s, toks[i].e, g.disp, g.tip);
+        i++; continue;
+      }
+      // up to 4 consecutive Arabic tokens, for multi-word expressions (longest match first)
+      let run = 0; while (run < 4 && i + run < toks.length && !toks[i + run].num) run++;
       let hit = null, span = null;
-      for (let k = Math.min(4, words.length - i); k >= 1; k--) {
-        const start = words[i].s, end = words[i + k - 1].e;
+      for (let k = run; k >= 1; k--) {
+        const start = toks[i].s, end = toks[i + k - 1].e;
         const key = text.slice(start, end).replace(/\s+/g, " ").trim();
         if (GLOSS[key]) { hit = GLOSS[key]; span = { start, end, k }; break; }
       }
-      if (hit) {
-        out += glossEscHtml(text.slice(cursor, span.start));
-        out += '<span class="gloss" data-gloss="' + glossTip(hit) + '">' + glossEscHtml(text.slice(span.start, span.end)) + "</span>";
-        cursor = span.end; i += span.k; changed = true;
-      } else { i++; }
+      if (hit) { wrap(span.start, span.end, text.slice(span.start, span.end), hit); i += span.k; }
+      else { i++; }
     }
     if (!changed) return null;
     out += glossEscHtml(text.slice(cursor));
