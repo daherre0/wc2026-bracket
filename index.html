@@ -735,19 +735,22 @@
     hlSummary: "📺 Match highlights — watch every played game",
     hlIntro: "Official FIFA highlights for every match played so far. Click a card to watch — the video opens right here.",
     hlLoading: "Loading highlights…", hlEmpty: "No highlights available yet.",
-    hlWatchYt: "Watch on YouTube", hlClose: "Close", hlWatch: "▶ Watch highlights", hlGroup: "Group"
+    hlWatchYt: "Watch on YouTube", hlClose: "Close", hlWatch: "▶ Watch highlights", hlGroup: "Group",
+    hlKnockout: "Knockout stage"
   });
   Object.assign(T.es, {
     hlSummary: "📺 Resúmenes — mira cada partido jugado",
     hlIntro: "Resúmenes oficiales de la FIFA de cada partido jugado hasta ahora. Haz clic en una tarjeta para verlo — el vídeo se abre aquí mismo.",
     hlLoading: "Cargando resúmenes…", hlEmpty: "Aún no hay resúmenes disponibles.",
-    hlWatchYt: "Ver en YouTube", hlClose: "Cerrar", hlWatch: "▶ Ver resumen", hlGroup: "Grupo"
+    hlWatchYt: "Ver en YouTube", hlClose: "Cerrar", hlWatch: "▶ Ver resumen", hlGroup: "Grupo",
+    hlKnockout: "Fase eliminatoria"
   });
   Object.assign(T.ar, {
     hlSummary: "📺 ملخّصات الماتشات — تفرّج فكل ماتش تلعب",
     hlIntro: "ملخّصات رسمية د الفيفا لكل ماتش تلعب حتّى دابا. كليكي على شي كارط باش تتفرّج — الفيديو كيتحل هنا.",
     hlLoading: "كيتحمّلو الملخّصات…", hlEmpty: "مازال ماكاين حتّى ملخّص.",
-    hlWatchYt: "تفرّج ف يوتيوب", hlClose: "سدّ", hlWatch: "▶ تفرّج فالملخّص", hlGroup: "المجموعة"
+    hlWatchYt: "تفرّج ف يوتيوب", hlClose: "سدّ", hlWatch: "▶ تفرّج فالملخّص", hlGroup: "المجموعة",
+    hlKnockout: "الأدوار الإقصائية"
   });
 
   let lang = lsGet("wc-lang", "en");
@@ -1634,7 +1637,7 @@
     const rawA = cs.find(x => x.homeAway === "away") || cs[1];
     const hl = done ? highlightFor(rawH && rawH.team, rawA && rawA.team) : null;
     const hlBtn = hl
-      ? `<button class="g-hl" data-vid="${hl.videoId}" data-title="${(hl.title || "").replace(/"/g, "&quot;")}" data-tip="${t("hlWatch")}" title="${t("hlWatch")}" aria-label="${t("hlWatch")}">▶</button>`
+      ? `<button class="g-hl" data-vid="${hl.videoId}" data-embed="${hl.embeddable === false ? 0 : 1}" data-title="${(hl.title || "").replace(/"/g, "&quot;")}" data-tip="${t("hlWatch")}" title="${t("hlWatch")}" aria-label="${t("hlWatch")}">▶</button>`
       : "";
     const foot = (badge || hlBtn) ? `<div class="g-foot">${badge}${hlBtn}</div>` : "";
 
@@ -1916,12 +1919,17 @@
     if (!highlightsData.length) { host.innerHTML = `<div class="msg">${t("hlEmpty")}</div>`; return; }
 
     const meta = nm => hlIndex[hlNorm(nm)] || {};
-    const buckets = {};           // group letter (or "" if unknown) -> matches
+    const buckets = {};           // group letter ("__ko__" knockout, "" unknown) -> matches
     highlightsData.forEach(m => {
-      const grp = (meta(m.home).group || meta(m.away).group || "");
+      const gh = meta(m.home).group, ga = meta(m.away).group;
+      // Same group → a group game; two different groups → a knockout tie (group opponents
+      // can't meet again in the bracket). One side unknown → fall back to the known group.
+      const grp = (gh && ga) ? (gh === ga ? gh : "__ko__") : (gh || ga || "");
       (buckets[grp] || (buckets[grp] = [])).push(m);
     });
-    const letters = Object.keys(buckets).sort((a, b) => (a || "~").localeCompare(b || "~"));
+    // Groups A–L first (alphabetical), then knockout, then anything ungrouped.
+    const rank = L => L === "__ko__" ? "yy" : (L === "" ? "zz" : L);
+    const letters = Object.keys(buckets).sort((a, b) => rank(a).localeCompare(rank(b)));
 
     const teamRow = (name, score, won) => {
       const logo = meta(name).logo;
@@ -1929,7 +1937,7 @@
       return `<div class="hl-row ${won ? "win" : ""}">${img}<span class="nm">${name}</span><span class="sc">${score}</span></div>`;
     };
     const card = m => `
-      <button class="hl-card" data-vid="${m.videoId}" data-title="${(m.title || "").replace(/"/g, "&quot;")}">
+      <button class="hl-card" data-vid="${m.videoId}" data-embed="${m.embeddable === false ? 0 : 1}" data-title="${(m.title || "").replace(/"/g, "&quot;")}">
         <span class="hl-teams">
           ${teamRow(m.home, m.hs, m.hs > m.as)}
           ${teamRow(m.away, m.as, m.as > m.hs)}
@@ -1937,15 +1945,23 @@
         <span class="hl-play" aria-hidden="true">▶</span>
       </button>`;
 
+    const header = L => L === "__ko__" ? t("hlKnockout") : (L ? `${t("hlGroup")} ${L}` : "");
     host.innerHTML = letters.map(L => `
       <div class="hl-group">
-        ${L ? `<h3>${t("hlGroup")} ${L}</h3>` : ""}
+        ${header(L) ? `<h3>${header(L)}</h3>` : ""}
         <div class="hl-grid">${buckets[L].map(card).join("")}</div>
       </div>`).join("");
   }
 
   // ---- Embedded player modal ----
   const hlModal = document.getElementById("hlModal");
+  // DSports (and other broadcaster) clips often can't be embedded / are geo-locked, so for
+  // those we just open YouTube in a new tab instead of showing a broken in-page player.
+  function playHighlight(el) {
+    const vid = el.dataset.vid;
+    if (el.dataset.embed === "0") window.open("https://www.youtube.com/watch?v=" + vid, "_blank", "noopener");
+    else openHighlight(vid, el.dataset.title);
+  }
   function openHighlight(vid, title) {
     document.getElementById("hlModalTitle").textContent = title || "";
     document.getElementById("hlModalYt").href = "https://www.youtube.com/watch?v=" + vid;
@@ -1961,11 +1977,11 @@
   }
   document.getElementById("highlights").addEventListener("click", e => {
     const c = e.target.closest(".hl-card");
-    if (c) openHighlight(c.dataset.vid, c.dataset.title);
+    if (c) playHighlight(c);
   });
   document.getElementById("bracket").addEventListener("click", e => {
     const b = e.target.closest(".g-hl");
-    if (b) { e.stopPropagation(); openHighlight(b.dataset.vid, b.dataset.title); }
+    if (b) { e.stopPropagation(); playHighlight(b); }
   });
   document.getElementById("hlModalClose").addEventListener("click", closeHighlight);
   hlModal.addEventListener("click", e => { if (e.target === hlModal) closeHighlight(); });

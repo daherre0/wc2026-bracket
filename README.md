@@ -57,6 +57,22 @@ names ESPN uses (so the cards bucket under their real group). Notes:
   `TEAMS` map at the top of `scripts/refresh-highlights.py`.
 - To follow a different playlist, change `PLAYLIST_URL` in the script.
 
+**Adding a video by hand.** For a match FIFA hasn't posted yet (e.g. a knockout tie a
+broadcaster like DSports uploaded first), add an entry to `highlights-manual.json` and re-run
+the script — it merges manual entries for any pair the FIFA playlist doesn't already cover
+(FIFA always wins, so a later official upload replaces yours automatically):
+
+```json
+{ "home": "South Africa", "away": "Canada", "hs": 0, "as": 1,
+  "videoId": "t1EwOwZWH60", "title": "Sudáfrica 0–1 Canadá | Resumen (DSports)",
+  "embeddable": false }
+```
+
+Set `"embeddable": false` when the video blocks embedding or is region-locked (common for
+broadcaster clips); those cards open YouTube in a new tab instead of the in-page player.
+Highlights whose two teams are in different groups are shown under a **Knockout stage**
+heading rather than a group.
+
 [playlist]: https://www.youtube.com/playlist?list=PLBRLtDhTHh5o
 
 ## Notes

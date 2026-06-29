@@ -21,6 +21,7 @@ import unicodedata
 PLAYLIST_URL = "https://www.youtube.com/playlist?list=PLBRLtDhTHh5o"
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 OUT = "highlights.json"
+MANUAL = "highlights-manual.json"   # hand-added videos for matches FIFA hasn't posted (e.g. DSports)
 
 # FIFA highlight titles arrive mostly in Spanish (a few in English). Normalise every
 # team to the English name ESPN uses, so the site reads consistently in any language.
@@ -120,9 +121,35 @@ def parse(html):
     return out
 
 
+def pair_key(m):
+    return tuple(sorted((strip(m["home"]), strip(m["away"]))))
+
+
+def merge_manual(matches):
+    """Add hand-curated entries (highlights-manual.json) for matches the FIFA playlist
+    doesn't carry yet. FIFA's own entry always wins, so once it posts an embeddable
+    version the manual one is dropped automatically — no cleanup needed."""
+    try:
+        with open(MANUAL, encoding="utf-8") as f:
+            manual = json.load(f)
+    except FileNotFoundError:
+        return matches
+    have = {pair_key(m) for m in matches}
+    added = 0
+    for m in manual:
+        if pair_key(m) in have:
+            print(f"  · skip manual {m['home']} v {m['away']} — already in FIFA playlist")
+            continue
+        matches.append(m)
+        added += 1
+    if added:
+        print(f"  + merged {added} manual entr{'y' if added == 1 else 'ies'} from {MANUAL}")
+    return matches
+
+
 def main():
     print("Fetching playlist…")
-    matches = parse(fetch_html())
+    matches = merge_manual(parse(fetch_html()))
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(matches, f, ensure_ascii=False, indent=1)
         f.write("\n")
