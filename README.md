@@ -19,6 +19,11 @@ FIFA World Cup 2026 live: the full knockout bracket plus the third-place standin
 - **Third-place standings** (below the bracket, collapsible) — toggle between
   **ESPN official** and a **live-calculated** table (recomputed from results, including
   in-progress games). Top 8 qualify; the gold line is the cut-off.
+- **Match highlights** (collapsible section) — every played match as a clickable card,
+  bucketed by group (A–L) with team crests and the final score. Click a card to watch the
+  **official FIFA highlight** in an embedded player (with a "Watch on YouTube" fallback for
+  any geo-blocked video). Links are snapshotted from FIFA's own YouTube highlights playlist
+  into `highlights.json`; group/crest come from the same ESPN data the page already loads.
 - **Matches today** banner with live status (live minute / FT / scheduled).
 - **Languages** — English, Español, and Moroccan Arabic / الدارجة (full right-to-left).
 - **Learn-as-you-read Darija** — when Darija is selected, every Darija word is underlined;
@@ -33,6 +38,12 @@ FIFA World Cup 2026 live: the full knockout bracket plus the third-place standin
 ## Notes
 
 - **Data:** ESPN's public API (keyless, CORS-enabled).
+- **Highlights** come from FIFA's official YouTube playlist. Because the page is static with
+  no backend, the video links are committed to `highlights.json` rather than scraped live in
+  the browser. Refresh them after each match day with `python3 scripts/refresh-highlights.py`
+  (needs only `curl` + `python3`, no API key) and commit the updated `highlights.json`.
+  Note: the page must be served over **http(s)** (not `file://`) for the browser to fetch
+  `highlights.json` — the GitHub Pages link and any local server both work.
 - The bracket **structure** is hardcoded to the official 2026 draw (FIFA match numbers),
   because ESPN's own knockout feeder data is inconsistent with the real draw; ESPN's
   Round-of-32 events are mapped onto that structure by team.

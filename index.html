@@ -334,6 +334,61 @@
   html[dir="rtl"] .key-grid { direction: ltr; }
   html[dir="rtl"] .acc-body { text-align: right; }
   html[dir="rtl"] .acc-body ul, html[dir="rtl"] .acc-body ol { padding-right: 18px; padding-left: 0; }
+
+  /* ---- Match highlights ---- */
+  .hl-intro { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+  .hl-group { margin-bottom: 18px; }
+  .hl-group > h3 {
+    font-size: 13px; letter-spacing: .4px; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 8px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .hl-grid {
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+  .hl-card {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px; cursor: pointer;
+    text-align: left; color: inherit; font: inherit; width: 100%;
+    transition: border-color .15s, transform .15s;
+  }
+  .hl-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .hl-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .hl-teams { flex: 1; min-width: 0; }
+  .hl-row { display: flex; align-items: center; gap: 7px; font-size: 14px; line-height: 1.5; }
+  .hl-row img { width: 18px; height: 18px; object-fit: contain; flex: none; }
+  .hl-row .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hl-row .sc { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .hl-row.win .nm { font-weight: 700; }
+  .hl-play { flex: none; color: var(--accent); font-size: 18px; }
+
+  /* video modal */
+  .hl-modal {
+    position: fixed; inset: 0; z-index: 100; display: none;
+    align-items: center; justify-content: center; padding: 20px;
+    background: rgba(4, 7, 15, .82); backdrop-filter: blur(3px);
+  }
+  .hl-modal.open { display: flex; }
+  .hl-dialog { width: min(960px, 100%); }
+  .hl-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .hl-title { font-size: 14px; font-weight: 600; flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hl-yt { color: var(--accent); font-size: 13px; text-decoration: none; white-space: nowrap; }
+  .hl-yt:hover { text-decoration: underline; }
+  .hl-x {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 16px;
+    line-height: 1; flex: none;
+  }
+  .hl-x:hover { border-color: var(--danger); color: var(--danger); }
+  .hl-frame {
+    position: relative; width: 100%; aspect-ratio: 16 / 9;
+    background: #000; border-radius: 12px; overflow: hidden; border: 1px solid var(--line);
+  }
+  .hl-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  html[dir="rtl"] .hl-card, html[dir="rtl"] .hl-grid { direction: ltr; }
 </style>
 </head>
 <body>
@@ -407,6 +462,16 @@
             </span>
           </div>
           <div id="bracket"><div class="msg" data-i18n="loadingBracket">Loading bracket…</div></div>
+        </div>
+      </details>
+    </div>
+
+    <div class="rules">
+      <details class="acc highlights-acc">
+        <summary data-i18n="hlSummary">📺 Match highlights — watch every played game</summary>
+        <div class="acc-body">
+          <p class="hl-intro" data-i18n="hlIntro">Official FIFA highlights for every match played so far. Click a card to watch — the video opens right here.</p>
+          <div id="highlights"><div class="msg" data-i18n="hlLoading">Loading highlights…</div></div>
         </div>
       </details>
     </div>
@@ -499,6 +564,17 @@
       Auto-refreshes every 20s · Data: <a href="https://www.espn.com/soccer/" target="_blank" rel="noopener">ESPN</a>
       · Tiebreakers: points → goal difference → goals scored
     </footer>
+  </div>
+
+  <div class="hl-modal" id="hlModal" aria-modal="true" role="dialog">
+    <div class="hl-dialog">
+      <div class="hl-bar">
+        <span class="hl-title" id="hlModalTitle"></span>
+        <a class="hl-yt" id="hlModalYt" href="#" target="_blank" rel="noopener" data-i18n="hlWatchYt">Watch on YouTube</a>
+        <button class="hl-x" id="hlModalClose" data-i18n-tip="hlClose" title="Close" aria-label="Close">✕</button>
+      </div>
+      <div class="hl-frame" id="hlModalFrame"></div>
+    </div>
   </div>
 
 <script>
@@ -646,6 +722,26 @@
       translitSum: "🗣️ تعلّم تقرا الدارجة — دليل النطق"
     }
   };
+
+  // ---- Match highlights section (FIFA YouTube playlist, snapshotted in highlights.json)
+  Object.assign(T.en, {
+    hlSummary: "📺 Match highlights — watch every played game",
+    hlIntro: "Official FIFA highlights for every match played so far. Click a card to watch — the video opens right here.",
+    hlLoading: "Loading highlights…", hlEmpty: "No highlights available yet.",
+    hlWatchYt: "Watch on YouTube", hlClose: "Close", hlWatch: "▶ Watch highlights", hlGroup: "Group"
+  });
+  Object.assign(T.es, {
+    hlSummary: "📺 Resúmenes — mira cada partido jugado",
+    hlIntro: "Resúmenes oficiales de la FIFA de cada partido jugado hasta ahora. Haz clic en una tarjeta para verlo — el vídeo se abre aquí mismo.",
+    hlLoading: "Cargando resúmenes…", hlEmpty: "Aún no hay resúmenes disponibles.",
+    hlWatchYt: "Ver en YouTube", hlClose: "Cerrar", hlWatch: "▶ Ver resumen", hlGroup: "Grupo"
+  });
+  Object.assign(T.ar, {
+    hlSummary: "📺 ملخّصات الماتشات — تفرّج فكل ماتش تلعب",
+    hlIntro: "ملخّصات رسمية د الفيفا لكل ماتش تلعب حتّى دابا. كليكي على شي كارط باش تتفرّج — الفيديو كيتحل هنا.",
+    hlLoading: "كيتحمّلو الملخّصات…", hlEmpty: "مازال ماكاين حتّى ملخّص.",
+    hlWatchYt: "تفرّج ف يوتيوب", hlClose: "سدّ", hlWatch: "▶ تفرّج فالملخّص", hlGroup: "المجموعة"
+  });
 
   let lang = lsGet("wc-lang", "en");
   function t(k) { const o = T[lang] || T.en; return (k in o) ? o[k] : (k in T.en ? T.en[k] : k); }
@@ -1115,7 +1211,7 @@
   function setLang(l) {
     lang = l; lsSet("wc-lang", l);
     stopGloss();   // drop tooltips; the re-render below rewrites all text to the new language
-    applyI18n(); renderTitle(); renderStatus(); renderThird(); renderBanner(lastMatches); renderBracket();
+    applyI18n(); renderTitle(); renderStatus(); renderThird(); renderBanner(lastMatches); renderBracket(); renderHighlights();
     if (lang === "ar") startGloss();
     const sel = document.getElementById("lang"); if (sel) sel.value = l;
   }
@@ -1748,6 +1844,98 @@
     }
   }
 
+  // ---- Match highlights (FIFA YouTube playlist, snapshotted in highlights.json) ----
+  // The page is static with no backend, so links are committed to highlights.json and
+  // refreshed out-of-band by scripts/refresh-highlights.py. Group + crest come from the
+  // ESPN standings the app already loads, so cards bucket under their real group.
+  let highlightsData = null;     // array from highlights.json (null until loaded)
+  let hlIndex = {};              // normalised team name -> { group, logo }
+  const hlNorm = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  function buildHlIndex(groups) {
+    const idx = {};
+    for (const g of (groups || [])) {
+      const letter = groupLetter(g);
+      for (const e of (g.standings && g.standings.entries) || []) {
+        const meta = { group: letter, logo: teamLogo(e.team) };
+        for (const nm of [e.team.displayName, e.team.shortDisplayName, e.team.name]) {
+          if (nm) idx[hlNorm(nm)] = meta;
+        }
+      }
+    }
+    return idx;
+  }
+
+  async function loadHighlights() {
+    try {
+      const res = await fetch("highlights.json", { cache: "no-store" });
+      if (!res.ok) throw new Error("highlights HTTP " + res.status);
+      highlightsData = await res.json();
+    } catch (err) {
+      console.warn("highlights.json unavailable", err);   // served from file://, or not generated yet
+      highlightsData = [];
+    }
+    renderHighlights();
+  }
+
+  function renderHighlights() {
+    const host = document.getElementById("highlights");
+    if (!host) return;
+    if (highlightsData === null) { host.innerHTML = `<div class="msg">${t("hlLoading")}</div>`; return; }
+    if (!highlightsData.length) { host.innerHTML = `<div class="msg">${t("hlEmpty")}</div>`; return; }
+
+    const meta = nm => hlIndex[hlNorm(nm)] || {};
+    const buckets = {};           // group letter (or "" if unknown) -> matches
+    highlightsData.forEach(m => {
+      const grp = (meta(m.home).group || meta(m.away).group || "");
+      (buckets[grp] || (buckets[grp] = [])).push(m);
+    });
+    const letters = Object.keys(buckets).sort((a, b) => (a || "~").localeCompare(b || "~"));
+
+    const teamRow = (name, score, won) => {
+      const logo = meta(name).logo;
+      const img = logo ? `<img src="${logo}" alt="" onerror="this.remove()">` : "";
+      return `<div class="hl-row ${won ? "win" : ""}">${img}<span class="nm">${name}</span><span class="sc">${score}</span></div>`;
+    };
+    const card = m => `
+      <button class="hl-card" data-vid="${m.videoId}" data-title="${(m.title || "").replace(/"/g, "&quot;")}">
+        <span class="hl-teams">
+          ${teamRow(m.home, m.hs, m.hs > m.as)}
+          ${teamRow(m.away, m.as, m.as > m.hs)}
+        </span>
+        <span class="hl-play" aria-hidden="true">▶</span>
+      </button>`;
+
+    host.innerHTML = letters.map(L => `
+      <div class="hl-group">
+        ${L ? `<h3>${t("hlGroup")} ${L}</h3>` : ""}
+        <div class="hl-grid">${buckets[L].map(card).join("")}</div>
+      </div>`).join("");
+  }
+
+  // ---- Embedded player modal ----
+  const hlModal = document.getElementById("hlModal");
+  function openHighlight(vid, title) {
+    document.getElementById("hlModalTitle").textContent = title || "";
+    document.getElementById("hlModalYt").href = "https://www.youtube.com/watch?v=" + vid;
+    document.getElementById("hlModalFrame").innerHTML =
+      `<iframe src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&rel=0"
+        title="${(title || "").replace(/"/g, "&quot;")}" allow="autoplay; encrypted-media; fullscreen"
+        allowfullscreen></iframe>`;
+    hlModal.classList.add("open");
+  }
+  function closeHighlight() {
+    hlModal.classList.remove("open");
+    document.getElementById("hlModalFrame").innerHTML = "";   // stop playback
+  }
+  document.getElementById("highlights").addEventListener("click", e => {
+    const c = e.target.closest(".hl-card");
+    if (c) openHighlight(c.dataset.vid, c.dataset.title);
+  });
+  document.getElementById("hlModalClose").addEventListener("click", closeHighlight);
+  hlModal.addEventListener("click", e => { if (e.target === hlModal) closeHighlight(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && hlModal.classList.contains("open")) closeHighlight(); });
+
   let refreshTimer = null;
   async function load() {
     setStatus("stUpdating", false);
@@ -1763,6 +1951,8 @@
       thirdState.official = officialThirds(groups);
       thirdState.calc = comp.thirds;
       lastMatches = matches;
+      hlIndex = buildHlIndex(groups);   // crests + group letters for the highlights cards
+      renderHighlights();
       renderThird();
       renderBanner(matches);
       if (rounds) bracketState.rounds = rounds;
@@ -1800,6 +1990,7 @@
   applyI18n();
   renderTitle();
   if (lang === "ar") startGloss();
+  loadHighlights();
   load();
   setInterval(tickCountdown, 250);
 </script>
