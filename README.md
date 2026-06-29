@@ -12,7 +12,8 @@ FIFA World Cup 2026 live: the full knockout bracket plus the third-place standin
 - **Knockout bracket** (top section, collapsible) — left-to-right tournament tree with
   connector lines, each tie showing kick-off date/time in **your local timezone** and the
   **venue**. Two modes:
-  - *Confirmed* — real matchups; undecided slots show which winners feed them.
+  - *Confirmed* — real matchups; once a tie is **final** the slot it feeds shows the
+    actual advancing team, while still-undecided slots show which winners feed them.
   - *Projected (live)* — fills slots **only** from games already played or in progress
     (frozen at the current score); upcoming matches stay TBD until kickoff.
 - **Third-place standings** (below the bracket, collapsible) — toggle between
@@ -20,6 +21,11 @@ FIFA World Cup 2026 live: the full knockout bracket plus the third-place standin
   in-progress games). Top 8 qualify; the gold line is the cut-off.
 - **Matches today** banner with live status (live minute / FT / scheduled).
 - **Languages** — English, Español, and Moroccan Arabic / الدارجة (full right-to-left).
+- **Learn-as-you-read Darija** — when Darija is selected, every Darija word is underlined;
+  hover or tap it for a tooltip with its pronunciation (🗣 scholarly transliteration,
+  ⌨ arabizi "chat alphabet") and English meaning, backed by a collapsible pronunciation
+  guide. Numbers render in Arabic-Indic numerals (2026 → ٢٠٢٦) and their tooltip reads the
+  whole number out the way a Moroccan says it (٢٠٢٦ → ألفين و ستة و عشرين).
 - **Smart auto-refresh** — polls every 20s **only while matches are live**; otherwise it
   goes idle with a light heartbeat. Manual refresh always available.
 - Tooltips on every abbreviation, plus accordions explaining the rules and the bracket.
