@@ -31,6 +31,8 @@ FIFA World Cup 2026 live: the full knockout bracket plus the third-place standin
   ⌨ arabizi "chat alphabet") and English meaning, backed by a collapsible pronunciation
   guide. Numbers render in Arabic-Indic numerals (2026 → ٢٠٢٦) and their tooltip reads the
   whole number out the way a Moroccan says it (٢٠٢٦ → ألفين و ستة و عشرين).
+  **Click any underlined word to hear it** — pronounced by Microsoft's Moroccan-Arabic
+  neural voice (Jamal), pre-generated to MP3 so it plays for everyone with no API key.
 - **Smart auto-refresh** — polls every 20s **only while matches are live**; otherwise it
   goes idle with a light heartbeat. Manual refresh always available.
 - Tooltips on every abbreviation, plus accordions explaining the rules and the bracket.
@@ -74,6 +76,22 @@ Highlights whose two teams are in different groups are shown under a **Knockout 
 heading rather than a group.
 
 [playlist]: https://www.youtube.com/playlist?list=PLBRLtDhTHh5o
+
+## Regenerating the Darija audio
+
+Each glossary word has a pre-generated pronunciation clip (Microsoft's `ar-MA-JamalNeural`
+voice) under `audio/`, mapped by `audio/manifest.json`. Same reasoning as the highlights:
+a static page can't call a paid TTS service at runtime, so the audio is snapshotted and
+committed. After adding glossary entries, regenerate (it skips clips already made) and commit:
+
+```bash
+pip install edge-tts
+python3 scripts/generate-tts.py            # --voice ar-MA-MounaNeural for the female voice
+git add audio && git commit -m "Regenerate Darija TTS audio"
+```
+
+`edge-tts` is free and keyless (the same voice Edge/Bing "read aloud" uses). As with the
+highlights, the audio loads only over **http(s)** — on `file://` the button is silent.
 
 ## Notes
 

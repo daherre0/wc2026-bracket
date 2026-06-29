@@ -740,21 +740,21 @@
     hlIntro: "Official FIFA highlights for every match played so far. Click a card to watch — the video opens right here.",
     hlLoading: "Loading highlights…", hlEmpty: "No highlights available yet.",
     hlWatchYt: "Watch on YouTube", hlClose: "Close", hlWatch: "▶ Watch highlights", hlGroup: "Group",
-    hlKnockout: "Knockout stage"
+    hlKnockout: "Knockout stage", ttsHear: "click to hear"
   });
   Object.assign(T.es, {
     hlSummary: "📺 Resúmenes — mira cada partido jugado",
     hlIntro: "Resúmenes oficiales de la FIFA de cada partido jugado hasta ahora. Haz clic en una tarjeta para verlo — el vídeo se abre aquí mismo.",
     hlLoading: "Cargando resúmenes…", hlEmpty: "Aún no hay resúmenes disponibles.",
     hlWatchYt: "Ver en YouTube", hlClose: "Cerrar", hlWatch: "▶ Ver resumen", hlGroup: "Grupo",
-    hlKnockout: "Fase eliminatoria"
+    hlKnockout: "Fase eliminatoria", ttsHear: "haz clic para escuchar"
   });
   Object.assign(T.ar, {
     hlSummary: "📺 ملخّصات الماتشات — تفرّج فكل ماتش تلعب",
     hlIntro: "ملخّصات رسمية د الفيفا لكل ماتش تلعب حتّى دابا. كليكي على شي كارط باش تتفرّج — الفيديو كيتحل هنا.",
     hlLoading: "كيتحمّلو الملخّصات…", hlEmpty: "مازال ماكاين حتّى ملخّص.",
     hlWatchYt: "تفرّج ف يوتيوب", hlClose: "سدّ", hlWatch: "▶ تفرّج فالملخّص", hlGroup: "المجموعة",
-    hlKnockout: "الأدوار الإقصائية"
+    hlKnockout: "الأدوار الإقصائية", ttsHear: "كليكي باش تسمع"
   });
 
   let lang = lsGet("wc-lang", "en");
@@ -1205,11 +1205,29 @@
 
   // Floating tooltip on <body>: works inside titles, accordion summaries and
   // scroll areas where a CSS ::after tooltip would be clipped or hidden.
+  // ---- Darija pronunciation audio (pre-generated Jamal voice; see scripts/generate-tts.py) ----
+  let ttsMap = {}, ttsAudio = null;
+  const ttsKey = w => (w || "").replace(/\s+/g, " ").trim();
+  async function loadTts() {
+    try {
+      const res = await fetch("audio/manifest.json", { cache: "no-store" });
+      if (res.ok) ttsMap = await res.json();
+    } catch (e) { /* file://, or audio not generated yet — silently no sound */ }
+  }
+  function playGloss(word) {
+    const src = ttsMap[ttsKey(word)];
+    if (!src) return;
+    if (ttsAudio) ttsAudio.pause();
+    ttsAudio = new Audio(src);
+    ttsAudio.play().catch(() => {});   // ignore autoplay/abort rejections
+  }
+
   let glossPop = null;
   function hideGlossPop() { if (glossPop) glossPop.style.display = "none"; }
   function showGlossPop(el, ev) {
-    const txt = el.getAttribute("data-gloss");
+    let txt = el.getAttribute("data-gloss");
     if (!txt) return;
+    if (ttsMap[ttsKey(el.textContent)]) txt += "\n🔊 " + t("ttsHear");
     if (!glossPop) { glossPop = document.createElement("div"); glossPop.className = "gloss-pop"; document.body.appendChild(glossPop); }
     glossPop.textContent = txt;       // newlines + white-space:pre-line render the lines
     glossPop.style.display = "block";
@@ -1228,9 +1246,9 @@
   function glossTarget(e) { return e.target && e.target.closest ? e.target.closest(".gloss") : null; }
   document.addEventListener("mouseover", e => { const g = glossTarget(e); if (g) showGlossPop(g, e); });
   document.addEventListener("mouseout", e => { if (glossTarget(e)) hideGlossPop(); });
-  document.addEventListener("click", e => {   // tap-to-toggle for touch devices
+  document.addEventListener("click", e => {   // tap shows the gloss + plays its pronunciation
     const g = glossTarget(e);
-    if (g) { e.preventDefault(); if (glossPop && glossPop.style.display === "block") hideGlossPop(); else showGlossPop(g, e); }
+    if (g) { e.preventDefault(); playGloss(g.textContent); showGlossPop(g, e); }
     else hideGlossPop();
   });
   window.addEventListener("scroll", hideGlossPop, true);
@@ -2099,6 +2117,7 @@
   renderTitle();
   if (lang === "ar") startGloss();
   loadHighlights();
+  loadTts();
   load();
   setInterval(tickCountdown, 250);
 </script>
