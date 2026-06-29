@@ -389,6 +389,13 @@
   }
   .hl-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
   html[dir="rtl"] .hl-card, html[dir="rtl"] .hl-grid { direction: ltr; }
+  /* ▶ highlight button on a finished bracket tie */
+  .g-hl {
+    background: transparent; border: 1px solid var(--line); color: var(--accent);
+    border-radius: 6px; padding: 1px 6px; font-size: 10px; line-height: 1.4;
+    cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .g-hl:hover { border-color: var(--accent); background: var(--accent-dim); }
 </style>
 </head>
 <body>
@@ -1622,7 +1629,14 @@
     let badge = "";
     if (live) badge = `<span class="g-stat live" data-tip="${t("tipMatchProg")}" title="${t("tipMatchProg")}">${type.shortDetail || "LIVE"}</span>`;
     else if (done) badge = `<span class="g-stat done" data-tip="${t("tipFTwinner")}" title="${t("tipFTwinner")}">${t("ft")}</span>`;
-    const foot = badge ? `<div class="g-foot">${badge}</div>` : "";
+    // Highlight button for a finished tie, once FIFA has posted (and we've snapshotted) it.
+    const rawH = cs.find(x => x.homeAway === "home") || cs[0];
+    const rawA = cs.find(x => x.homeAway === "away") || cs[1];
+    const hl = done ? highlightFor(rawH && rawH.team, rawA && rawA.team) : null;
+    const hlBtn = hl
+      ? `<button class="g-hl" data-vid="${hl.videoId}" data-title="${(hl.title || "").replace(/"/g, "&quot;")}" data-tip="${t("hlWatch")}" title="${t("hlWatch")}" aria-label="${t("hlWatch")}">▶</button>`
+      : "";
+    const foot = (badge || hlBtn) ? `<div class="g-foot">${badge}${hlBtn}</div>` : "";
 
     return `<div class="game ${live ? "live" : ""}">${row(home)}${row(away)}${meta}${foot}</div>`;
   }
@@ -1850,7 +1864,21 @@
   // ESPN standings the app already loads, so cards bucket under their real group.
   let highlightsData = null;     // array from highlights.json (null until loaded)
   let hlIndex = {};              // normalised team name -> { group, logo }
+  let hlPairs = {};              // "teamA|teamB" (sorted, normalised) -> match, for bracket lookups
   const hlNorm = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const hlPairKey = (a, b) => [hlNorm(a), hlNorm(b)].sort().join("|");
+
+  // Find the highlight for a knockout tie by its (unordered) team pair. ESPN gives the
+  // bracket teams as objects; try each name form since short/display names can differ.
+  function highlightFor(teamA, teamB) {
+    if (!teamA || !teamB) return null;
+    const forms = t => [t.displayName, t.shortDisplayName, t.name].filter(Boolean);
+    for (const a of forms(teamA)) for (const b of forms(teamB)) {
+      const m = hlPairs[hlPairKey(a, b)];
+      if (m) return m;
+    }
+    return null;
+  }
 
   function buildHlIndex(groups) {
     const idx = {};
@@ -1875,7 +1903,10 @@
       console.warn("highlights.json unavailable", err);   // served from file://, or not generated yet
       highlightsData = [];
     }
+    hlPairs = {};
+    for (const m of highlightsData) hlPairs[hlPairKey(m.home, m.away)] = m;
     renderHighlights();
+    renderBracket();   // surface ▶ buttons on any finished ties that now have a highlight
   }
 
   function renderHighlights() {
@@ -1931,6 +1962,10 @@
   document.getElementById("highlights").addEventListener("click", e => {
     const c = e.target.closest(".hl-card");
     if (c) openHighlight(c.dataset.vid, c.dataset.title);
+  });
+  document.getElementById("bracket").addEventListener("click", e => {
+    const b = e.target.closest(".g-hl");
+    if (b) { e.stopPropagation(); openHighlight(b.dataset.vid, b.dataset.title); }
   });
   document.getElementById("hlModalClose").addEventListener("click", closeHighlight);
   hlModal.addEventListener("click", e => { if (e.target === hlModal) closeHighlight(); });
