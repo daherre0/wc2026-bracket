@@ -628,22 +628,22 @@
     <div class="rules" id="ttsLab" style="display:none">
       <details class="acc">
         <summary>🎙️ قرا ليا بالدارجة — حوّل النص لصوت</summary>
-        <div class="acc-body gloss-skip">
+        <div class="acc-body">
           <p>لصق شي نص بالدارجة وكليكي على «اقرا» باش تسمعو. الصوت كيتصاوب دابا (live) وماكيتسجّلش — غير كيتخزن مؤقتا فهاد الصفحة.</p>
           <textarea id="ttsInput" rows="4" dir="rtl" placeholder="كتب ولا لصق النص بالدارجة هنا…"></textarea>
-          <div class="tts-row">
+          <div class="tts-row gloss-skip">
             <button id="ttsPlay" class="tts-btn">▶ اقرا</button>
             <button id="ttsStop" class="tts-btn">⏹ وقّف</button>
             <span id="ttsStatus" class="tts-status"></span>
           </div>
           <details class="tts-cfg">
-            <summary>⚙️ إعدادات الصوت (proxy)</summary>
+            <summary class="gloss-skip">⚙️ إعدادات الصوت (proxy)</summary>
             <p>باش يخدم صوت جمال الحقيقي فأي ناڤيڨاتور، خدم proxy صغير مجاني ودير الرابط ديالو هنا (شوف <code>scripts/tts-proxy.ts</code>):</p>
-            <div class="tts-row">
+            <div class="tts-row gloss-skip">
               <input id="ttsProxy" type="url" dir="ltr" placeholder="https://…">
               <button id="ttsProxySave" class="tts-btn">حفظ</button>
             </div>
-            <p class="tts-hint" id="ttsEngineNote"></p>
+            <p class="tts-hint gloss-skip" id="ttsEngineNote"></p>
           </details>
         </div>
       </details>
@@ -1165,11 +1165,38 @@
     "شتنبر": ["šutanbir", "shotanbir", "September"],
     "أكتوبر": ["uktubir", "oktobir", "October"],
     "نونبر": ["nunbir", "nonbir", "November"],
-    "دجنبر": ["dujanbir", "dojanbir", "December"]
+    "دجنبر": ["dujanbir", "dojanbir", "December"],
+    // ---- Text-to-speech lab ----
+    "لصق": ["lṣəq", "lse9", "paste"],
+    "نص": ["naṣṣ", "nass", "text"],
+    "بالدارجة": ["b-əd-dariža", "bed-darija", "in Darija"],
+    "وكليكي": ["u-kliki", "ou-kliki", "and click"],
+    "اقرا": ["qra", "9ra", "read"],
+    "تسمعو": ["tsemʿu", "tsem3ou", "you hear it"],
+    "الصوت": ["əṣ-ṣawt", "s-sawt", "the sound / voice"],
+    "كيتصاوب": ["kaytṣawəb", "kaytsaweb", "is generated"],
+    "وماكيتسجّلش": ["u-makaytsežžəlš", "ou-makaytsejjelsh", "and is not recorded"],
+    "كيتخزن": ["kaytxzən", "kaytkhzen", "is stored"],
+    "مؤقتا": ["muʾaqqatan", "mou2a99atan", "temporarily"],
+    "فهاد": ["f-had", "f-had", "in this"],
+    "يخدم": ["yxdəm", "ykhdem", "works"],
+    "صوت": ["ṣawt", "sawt", "voice / sound"],
+    "جمال": ["žamal", "jamal", "Jamal (the voice)"],
+    "فأي": ["f-ʾayy", "f-ay", "in any"],
+    "ناڤيڨاتور": ["navigatur", "navigator", "browser"],
+    "خدم": ["xdəm", "khdem", "use / run"],
+    "صغير": ["ṣġir", "sghir", "small"],
+    "مجاني": ["mažžani", "majjani", "free"],
+    "ودير": ["u-dir", "ou-dir", "and put"],
+    "الرابط": ["ər-rabiṭ", "r-rabit", "the link"],
+    "ديالو": ["dyalu", "dyalou", "its / of it"],
+    "شوف": ["šuf", "shouf", "see / look"]
   };
 
-  // A token is either a digit run (ASCII or Arabic-Indic) or an Arabic-letter word.
-  const GLOSS_TOKEN = /([0-9٠-٩]+)|([ء-غـ-يً-ْٰٱ]+)/g;
+  // A token is either a digit run (ASCII or Arabic-Indic) or an Arabic-script word. The letter
+  // class spans U+0621–065F and U+066E–06FF (excluding the Arabic-Indic digits U+0660–0669), so
+  // it also covers the Maghrebi/Persian letters Darija uses — پ چ ڤ ڨ گ — as part of a word.
+  const GLOSS_TOKEN = /([0-9٠-٩]+)|([ء-ٟٮ-ۿ]+)/g;
   const GLOSS_SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, SELECT: 1, OPTION: 1, CODE: 1 };
 
   // ---- Darija number speller: digits → Arabic-Indic + spoken-out-loud reading ----
