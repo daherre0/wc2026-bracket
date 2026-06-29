@@ -35,14 +35,34 @@ FIFA World Cup 2026 live: the full knockout bracket plus the third-place standin
   goes idle with a light heartbeat. Manual refresh always available.
 - Tooltips on every abbreviation, plus accordions explaining the rules and the bracket.
 
+## Updating the highlights
+
+Match highlights come from [FIFA's official YouTube playlist][playlist]. Because the page is
+static with no backend, the video links are committed to `highlights.json` rather than scraped
+live in the browser. After each match day, regenerate the file and commit it:
+
+```bash
+python3 scripts/refresh-highlights.py     # re-reads the playlist → rewrites highlights.json
+git add highlights.json
+git commit -m "Refresh match highlights"
+git push
+```
+
+The script needs only `curl` and `python3` (no API key). It pulls every video from the
+playlist, parses the teams + score from each title, and normalizes team names to the English
+names ESPN uses (so the cards bucket under their real group). Notes:
+
+- A match shows up only once FIFA posts its highlight; until then the card is simply absent.
+- If a team name ever prints unchanged (the script warns `! unknown team ...`), add it to the
+  `TEAMS` map at the top of `scripts/refresh-highlights.py`.
+- To follow a different playlist, change `PLAYLIST_URL` in the script.
+
+[playlist]: https://www.youtube.com/playlist?list=PLBRLtDhTHh5o
+
 ## Notes
 
 - **Data:** ESPN's public API (keyless, CORS-enabled).
-- **Highlights** come from FIFA's official YouTube playlist. Because the page is static with
-  no backend, the video links are committed to `highlights.json` rather than scraped live in
-  the browser. Refresh them after each match day with `python3 scripts/refresh-highlights.py`
-  (needs only `curl` + `python3`, no API key) and commit the updated `highlights.json`.
-  Note: the page must be served over **http(s)** (not `file://`) for the browser to fetch
+- The page must be served over **http(s)** (not `file://`) for the browser to fetch
   `highlights.json` — the GitHub Pages link and any local server both work.
 - The bracket **structure** is hardcoded to the official 2026 draw (FIFA match numbers),
   because ESPN's own knockout feeder data is inconsistent with the real draw; ESPN's
