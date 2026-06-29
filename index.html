@@ -268,7 +268,8 @@
   .live-pill[data-tip]:hover::before { display: none; }
 
   /* ---- Darija "learn as you read" tooltips (only when Darija is selected) ---- */
-  .gloss { cursor: help; border-bottom: 1px dotted rgba(140,170,255,.55); }
+  /* cursor:pointer (not help): the "help" cursor's ? glyph overlapped the tooltip */
+  .gloss { cursor: pointer; border-bottom: 1px dotted rgba(140,170,255,.55); }
   /* floating tooltip rendered on <body> so it is never clipped by an overflow
      ancestor (scroll areas, accordions) or hidden behind another layer */
   .gloss-pop {
@@ -1080,11 +1081,11 @@
     glossPop.style.display = "block";
     const r = el.getBoundingClientRect();
     const pr = glossPop.getBoundingClientRect();
-    let top = r.top - pr.height - 9;   // preferred: above the word, clear of the cursor
-    if (top < 6) {                     // no room above (e.g. the title) → drop it below,
-      const cursorY = ev ? ev.clientY : r.bottom;   // but clear the help-cursor so its "?"
-      top = Math.max(r.bottom + 9, cursorY + 26);   // glyph never covers the tooltip text
-    }
+    const cy = ev ? ev.clientY : (r.top + r.bottom) / 2;
+    // Sit above the word AND at least 22px above the pointer, so no cursor glyph reaches
+    // the tooltip; only drop below (and clear of the pointer) when there's no room above.
+    let top = Math.min(r.top - 9, cy - 22) - pr.height;
+    if (top < 6) top = Math.max(r.bottom + 9, cy + 26);
     let left = r.left + r.width / 2 - pr.width / 2;
     left = Math.max(6, Math.min(left, window.innerWidth - pr.width - 6));
     glossPop.style.top = top + "px";
