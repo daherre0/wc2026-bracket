@@ -86,10 +86,14 @@
     color: var(--muted); margin: 0 0 10px; display: flex; align-items: center; gap: 8px;
   }
   .live-match {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 10px; padding: 7px 0; border-top: 1px solid rgba(37,48,77,.5);
+    display: flex; flex-direction: column;
+    gap: 4px; padding: 7px 0; border-top: 1px solid rgba(37,48,77,.5);
     font-size: 14px;
   }
+  .lm-main { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .lm-meta { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 11.5px; color: var(--muted); }
+  .lm-meta > span { display: inline-flex; align-items: center; gap: 4px; }
+  .lm-venue { cursor: help; }
   .live-match:first-of-type { border-top: none; }
   .live-match .teams { display: flex; align-items: center; gap: 8px; }
   .live-match .score { font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -1489,12 +1493,16 @@
       const away = cs.find(x => x.homeAway === "away") || cs[1] || {};
       const type = (ev.status && ev.status.type) || {};
       const state = type.state; // "pre" | "in" | "post"
+      const venue = comp.venue || ev.venue || {};
       return {
         home: (home.team && (home.team.shortDisplayName || home.team.displayName)) || "?",
         away: (away.team && (away.team.shortDisplayName || away.team.displayName)) || "?",
         hs: home.score, as: away.score,
         state,
-        detail: type.shortDetail || type.detail || ""
+        detail: type.shortDetail || type.detail || "",
+        date: ev.date,
+        venue: venue.fullName || "",
+        city: (venue.address || {}).city || ""
       };
     });
   }
@@ -1512,10 +1520,19 @@
       const label = live ? (m.detail || "LIVE") : (done ? t("ft") : (m.detail || t("scheduled")));
       const pillCls = live ? "" : (done ? "done" : "scheduled");
       const tip = live ? t("tipLive") : (done ? t("tipDone") : t("tipSched"));
+      const when = fmtDateTime(m.date);
+      const venueTip = m.venue ? (m.venue + (m.city ? " — " + m.city : "")) : "";
+      const meta = (when || m.venue) ? `
+          <span class="lm-meta">
+            ${when ? `<span class="lm-when" data-tip="${t("tipKick")}" title="${t("tipKick")}">📅 ${when}</span>` : ""}
+            ${m.venue ? `<span class="lm-venue" data-tip="${venueTip}" title="${venueTip}">🏟️ ${m.venue}${m.city ? " · " + m.city : ""}</span>` : ""}
+          </span>` : "";
       return `
         <div class="live-match">
-          <span class="teams">${m.home} <span class="score">${score}</span> ${m.away}</span>
-          <span class="live-pill ${pillCls}" data-tip="${tip}" title="${tip}">${label}</span>
+          <span class="lm-main">
+            <span class="teams">${m.home} <span class="score">${score}</span> ${m.away}</span>
+            <span class="live-pill ${pillCls}" data-tip="${tip}" title="${tip}">${label}</span>
+          </span>${meta}
         </div>`;
     }).join("");
     banner.style.display = "";
