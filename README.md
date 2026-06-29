@@ -110,6 +110,21 @@ git add audio/goals audio/goals.json && git commit -m "Regenerate goal chants"
 Browser autoplay rules mean the chant/cheer only sound after the user has interacted with the
 page at least once (the 🎆 toggle counts); the fireworks always show.
 
+## Live Darija text-to-speech (paste-and-listen)
+
+When **Darija is selected**, a final 🎙️ section lets you paste any Darija text and hear it. The
+audio is generated on demand and cached only in memory (never committed). Because a normal
+browser can't reach the Jamal voice directly (Microsoft blocks non-Edge browsers; no free CORS
+Darija API exists), it picks the best engine available:
+
+1. **Proxy** — real Jamal in any browser, if you deploy the tiny relay in `scripts/tts-proxy.ts`
+   (easiest on [Val.town](https://val.town): New → HTTP val → paste → save → put the URL in the
+   section's ⚙️ settings). Free, keyless.
+2. **In-browser edge-tts** — real Jamal with no deploy, but **only in Microsoft Edge** (other
+   browsers are blocked by Microsoft); loaded on demand from a CDN.
+3. **Web Speech API** — last-resort fallback using the device's own Arabic (MSA) voice, which is
+   often absent (e.g. Linux/Chrome) and isn't true Darija. The section tells you which is active.
+
 ## Notes
 
 - **Data:** ESPN's public API (keyless, CORS-enabled).

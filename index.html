@@ -430,6 +430,29 @@
   .goal-card img { width: 44px; height: 44px; object-fit: contain; }
   .goal-card span { font-size: 25px; font-weight: 800; letter-spacing: 1px; color: var(--gold); }
   .goal-card b { font-size: 21px; color: var(--text); }
+
+  /* ---- Darija text-to-speech lab ---- */
+  #ttsInput {
+    width: 100%; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px;
+    font-size: 16px; font-family: inherit; line-height: 1.7; resize: vertical;
+  }
+  #ttsInput:focus { outline: none; border-color: var(--accent); }
+  .tts-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .tts-btn {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 14px; font-size: 14px; cursor: pointer;
+  }
+  .tts-btn:hover { border-color: var(--accent); }
+  #ttsPlay { border-color: var(--accent); color: var(--accent); }
+  .tts-status { color: var(--muted); font-size: 13px; }
+  .tts-cfg { margin-top: 14px; }
+  .tts-cfg > summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  .tts-cfg #ttsProxy {
+    flex: 1; min-width: 200px; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 13px;
+  }
+  .tts-hint { color: var(--muted); font-size: 12.5px; margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -598,6 +621,30 @@
             <li>Placeholders use the feeding round: <b>R32 / R16 / QF / SF</b>, plus <b>W</b> (winner) or <b>L</b> (loser). Example: <b>R32 1 W</b> = the winner of Round-of-32 match 1.</li>
             <li>Tie status: a red minute = <b>live</b>, <b>FT</b> = finished (winner in bold), a date = scheduled kick-off. Italic grey names are slots whose team isn't decided yet.</li>
           </ul>
+        </div>
+      </details>
+    </div>
+
+    <div class="rules" id="ttsLab" style="display:none">
+      <details class="acc">
+        <summary>🎙️ قرا ليا بالدارجة — حوّل النص لصوت</summary>
+        <div class="acc-body gloss-skip">
+          <p>لصق شي نص بالدارجة وكليكي على «اقرا» باش تسمعو. الصوت كيتصاوب دابا (live) وماكيتسجّلش — غير كيتخزن مؤقتا فهاد الصفحة.</p>
+          <textarea id="ttsInput" rows="4" dir="rtl" placeholder="كتب ولا لصق النص بالدارجة هنا…"></textarea>
+          <div class="tts-row">
+            <button id="ttsPlay" class="tts-btn">▶ اقرا</button>
+            <button id="ttsStop" class="tts-btn">⏹ وقّف</button>
+            <span id="ttsStatus" class="tts-status"></span>
+          </div>
+          <details class="tts-cfg">
+            <summary>⚙️ إعدادات الصوت (proxy)</summary>
+            <p>باش يخدم صوت جمال الحقيقي فأي ناڤيڨاتور، خدم proxy صغير مجاني ودير الرابط ديالو هنا (شوف <code>scripts/tts-proxy.ts</code>):</p>
+            <div class="tts-row">
+              <input id="ttsProxy" type="url" dir="ltr" placeholder="https://…">
+              <button id="ttsProxySave" class="tts-btn">حفظ</button>
+            </div>
+            <p class="tts-hint" id="ttsEngineNote"></p>
+          </details>
         </div>
       </details>
     </div>
@@ -1321,9 +1368,11 @@
     document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
     document.querySelectorAll("[data-i18n-tip]").forEach(el => { const v = t(el.dataset.i18nTip); el.setAttribute("data-tip", v); el.setAttribute("title", v); });
-    // The "learn to read Darija" guide only makes sense when Darija is selected.
+    // The "learn to read Darija" guide and the text-to-speech lab only make sense in Darija.
     const guide = document.getElementById("translitGuideWrap");
     if (guide) guide.style.display = (lang === "ar") ? "" : "none";
+    const lab = document.getElementById("ttsLab");
+    if (lab) { lab.style.display = (lang === "ar") ? "" : "none"; if (lang === "ar") ttsEngineNote(); }
   }
   function setLang(l) {
     lang = l; lsSet("wc-lang", l);
@@ -2238,6 +2287,86 @@
   function unlockAudio() { ensureAudioCtx(); window.removeEventListener("pointerdown", unlockAudio); window.removeEventListener("keydown", unlockAudio); }
   window.addEventListener("pointerdown", unlockAudio); window.addEventListener("keydown", unlockAudio);
 
+  // ---- Darija TTS lab: paste text → speak it live (Darija-only section) ----
+  // Real Jamal can't be reached from a normal browser (Microsoft blocks non-Edge browsers and
+  // there's no free CORS Darija API), so engines are tried in order of quality:
+  //   1) a user-deployed proxy (real Jamal, any browser)  2) in-browser edge-tts (Edge only)
+  //   3) the device's Web-Speech voice (MSA, often silent). Output is cached in memory, never saved.
+  const TTS_PROXY_KEY = "wc-tts-proxy";
+  const isEdge = /\bEdg\//.test(navigator.userAgent || "");
+  let ttsLabAudio = null;
+  const ttsLabCache = new Map();   // text -> object URL (in-memory only, cleared on reload)
+
+  function ttsProxy() { return (lsGet(TTS_PROXY_KEY, "") || "").trim(); }
+  function ttsEngine() { return ttsProxy() ? "proxy" : (isEdge ? "edge" : "webspeech"); }
+  function ttsStatus(msg) { const el = document.getElementById("ttsStatus"); if (el) el.textContent = msg || ""; }
+  function ttsEngineNote() {
+    const note = document.getElementById("ttsEngineNote"); if (!note) return;
+    const e = ttsEngine();
+    note.textContent = e === "proxy"
+      ? "🟢 الصوت: جمال عن طريق proxy — كيخدم فأي ناڤيڨاتور."
+      : e === "edge"
+        ? "🟡 الصوت: جمال مباشرة فالناڤيڨاتور — كيخدم غير ف Microsoft Edge."
+        : "🟠 ماكاينش proxy وهاد الناڤيڨاتور ماشي Edge: غادي نجرّبو صوت النظام (ماشي دارجة، يمكن مايخرج حتا صوت). دير proxy باش تسمع جمال.";
+  }
+
+  function stopTtsLab() {
+    if (ttsLabAudio) { ttsLabAudio.pause(); ttsLabAudio = null; }
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
+  }
+  async function ttsPlayUrl(url) { ttsLabAudio = new Audio(url); await ttsLabAudio.play().catch(() => {}); }
+
+  async function ttsViaProxy(text) {
+    let url = ttsLabCache.get(text);
+    if (!url) {
+      const res = await fetch(ttsProxy(), { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, voice: "ar-MA-JamalNeural" }) });
+      if (!res.ok) throw new Error("proxy " + res.status);
+      url = URL.createObjectURL(await res.blob()); ttsLabCache.set(text, url);
+    }
+    await ttsPlayUrl(url);
+  }
+  async function ttsViaEdge(text) {
+    let url = ttsLabCache.get(text);
+    if (!url) {
+      const { EdgeTTS } = await import("https://esm.sh/edge-tts-universal/browser");
+      const result = await new EdgeTTS(text, "ar-MA-JamalNeural").synthesize();
+      url = URL.createObjectURL(result.audio); ttsLabCache.set(text, url);
+    }
+    await ttsPlayUrl(url);
+  }
+  function ttsViaWebSpeech(text) {
+    return new Promise((resolve, reject) => {
+      if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) { reject(new Error("no speech engine")); return; }
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "ar-MA";
+      const v = (speechSynthesis.getVoices() || []).find(v => /^ar/i.test(v.lang));
+      if (v) u.voice = v;
+      u.onend = () => resolve(); u.onerror = () => resolve();
+      speechSynthesis.speak(u);
+    });
+  }
+
+  async function speakTtsLab() {
+    const text = (document.getElementById("ttsInput").value || "").trim();
+    if (!text) { ttsStatus("كتب شي نص الّاول."); return; }
+    stopTtsLab();
+    if (typeof ensureAudioCtx === "function") ensureAudioCtx();   // share the audio unlock
+    const e = ttsEngine();
+    try {
+      ttsStatus("⏳ كنصاوب الصوت…");
+      if (e === "proxy") await ttsViaProxy(text);
+      else if (e === "edge") await ttsViaEdge(text);
+      else await ttsViaWebSpeech(text);
+      ttsStatus("");
+    } catch (err) {
+      console.warn("tts lab", err);
+      ttsStatus(e === "proxy" ? "⚠️ ماخدمش ال proxy — تأكد من الرابط."
+        : e === "edge" ? "⚠️ ماخدمش الصوت — جرّب ف Microsoft Edge."
+        : "⚠️ ناڤيڨاتورك مايدعمش الصوت — دير proxy.");
+    }
+  }
+
   let refreshTimer = null;
   async function load() {
     setStatus("stUpdating", false);
@@ -2291,6 +2420,14 @@
   document.getElementById("lang").addEventListener("change", e => setLang(e.target.value));
   document.getElementById("lang").value = lang;
   document.getElementById("celebrateToggle").addEventListener("click", () => { ensureAudioCtx(); setCelebrate(!celebrateOn); });
+  document.getElementById("ttsPlay").addEventListener("click", speakTtsLab);
+  document.getElementById("ttsStop").addEventListener("click", stopTtsLab);
+  document.getElementById("ttsProxy").value = ttsProxy();
+  document.getElementById("ttsProxySave").addEventListener("click", () => {
+    lsSet(TTS_PROXY_KEY, (document.getElementById("ttsProxy").value || "").trim());
+    ttsLabCache.clear(); ttsEngineNote();
+    ttsStatus(ttsProxy() ? "✅ تسجّل ال proxy." : "تمسح ال proxy.");
+  });
   applyI18n();
   setCelebrate(celebrateOn);   // sync toggle icon/tooltip
   renderTitle();
