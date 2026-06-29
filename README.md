@@ -24,7 +24,12 @@ FIFA World Cup 2026 live: the full knockout bracket plus the third-place standin
   **official FIFA highlight** in an embedded player (with a "Watch on YouTube" fallback for
   any geo-blocked video). Links are snapshotted from FIFA's own YouTube highlights playlist
   into `highlights.json`; group/crest come from the same ESPN data the page already loads.
-- **Matches today** banner with live status (live minute / FT / scheduled).
+- **Matches today** banner with live status (live minute / FT / scheduled), kickoff time in
+  your local timezone, and venue.
+- **Goal celebrations** — while a match is live, scoring a goal fires a **fireworks** burst and
+  a chant naming the team that scored (pre-generated per-team audio, plus a procedural crowd
+  roar). Toggle with the 🎆 button in the status bar. Detected by diffing each live match's
+  score between polls.
 - **Languages** — English, Español, and Moroccan Arabic / الدارجة (full right-to-left).
 - **Learn-as-you-read Darija** — when Darija is selected, every Darija word is underlined;
   hover or tap it for a tooltip with its pronunciation (🗣 scholarly transliteration,
@@ -93,6 +98,17 @@ git add audio && git commit -m "Regenerate Darija TTS audio"
 
 `edge-tts` is free and keyless (the same voice Edge/Bing "read aloud" uses). As with the
 highlights, the audio loads only over **http(s)** — on `file://` the button is silent.
+
+The **goal-celebration chants** are generated similarly (one per national team, upbeat English
+voice) into `audio/goals/`, keyed by team name in `audio/goals.json`:
+
+```bash
+python3 scripts/generate-goal-audio.py     # pulls the 48 teams from ESPN, no API key
+git add audio/goals audio/goals.json && git commit -m "Regenerate goal chants"
+```
+
+Browser autoplay rules mean the chant/cheer only sound after the user has interacted with the
+page at least once (the 🎆 toggle counts); the fireworks always show.
 
 ## Notes
 

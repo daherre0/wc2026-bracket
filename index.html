@@ -400,6 +400,36 @@
     cursor: pointer; transition: border-color .15s, background .15s;
   }
   .g-hl:hover { border-color: var(--accent); background: var(--accent-dim); }
+
+  /* ---- Goal celebration ---- */
+  #celebrateToggle {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 9px; font-size: 13px; line-height: 1; cursor: pointer;
+  }
+  #celebrateToggle:hover { border-color: #3a486e; }
+  #celebrateToggle.off { opacity: .5; }
+  #fireworks { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9998; display: none; }
+  #goalBanner {
+    position: fixed; top: 16%; left: 0; right: 0; z-index: 9999;
+    display: flex; justify-content: center; pointer-events: none; opacity: 0;
+  }
+  #goalBanner.show { animation: goalPop 3.8s ease forwards; }
+  @keyframes goalPop {
+    0%   { opacity: 0; transform: translateY(-14px) scale(.85); }
+    7%   { opacity: 1; transform: translateY(0) scale(1.06); }
+    14%  { transform: translateY(0) scale(1); }
+    85%  { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-8px) scale(.96); }
+  }
+  .goal-card {
+    display: flex; align-items: center; gap: 14px;
+    background: linear-gradient(135deg, #14233f, #0c1830);
+    border: 1px solid var(--gold); border-radius: 16px; padding: 15px 26px;
+    box-shadow: 0 14px 44px rgba(0,0,0,.5), 0 0 30px rgba(245,197,66,.25);
+  }
+  .goal-card img { width: 44px; height: 44px; object-fit: contain; }
+  .goal-card span { font-size: 25px; font-weight: 800; letter-spacing: 1px; color: var(--gold); }
+  .goal-card b { font-size: 21px; color: var(--text); }
 </style>
 </head>
 <body>
@@ -414,6 +444,7 @@
       <span id="updated"></span>
       <span id="nextUpdate"></span>
       <button id="refresh" data-i18n="refresh">↻ Refresh now</button>
+      <button id="celebrateToggle" data-i18n-tip="celebrateTip" title="Goal celebrations">🎆</button>
       <select id="lang" aria-label="Language" data-i18n-tip="langLabel" title="Language">
         <option value="en">English</option>
         <option value="es">Español</option>
@@ -740,21 +771,27 @@
     hlIntro: "Official FIFA highlights for every match played so far. Click a card to watch — the video opens right here.",
     hlLoading: "Loading highlights…", hlEmpty: "No highlights available yet.",
     hlWatchYt: "Watch on YouTube", hlClose: "Close", hlWatch: "▶ Watch highlights", hlGroup: "Group",
-    hlKnockout: "Knockout stage", ttsHear: "click to hear"
+    hlKnockout: "Knockout stage", ttsHear: "click to hear",
+    goalLabel: "GOAL!", celebrateTip: "Goal celebrations — fireworks & chant when a team scores live",
+    celebrateOff: "Goal celebrations off"
   });
   Object.assign(T.es, {
     hlSummary: "📺 Resúmenes — mira cada partido jugado",
     hlIntro: "Resúmenes oficiales de la FIFA de cada partido jugado hasta ahora. Haz clic en una tarjeta para verlo — el vídeo se abre aquí mismo.",
     hlLoading: "Cargando resúmenes…", hlEmpty: "Aún no hay resúmenes disponibles.",
     hlWatchYt: "Ver en YouTube", hlClose: "Cerrar", hlWatch: "▶ Ver resumen", hlGroup: "Grupo",
-    hlKnockout: "Fase eliminatoria", ttsHear: "haz clic para escuchar"
+    hlKnockout: "Fase eliminatoria", ttsHear: "haz clic para escuchar",
+    goalLabel: "¡GOL!", celebrateTip: "Celebración de gol — fuegos y cántico cuando un equipo marca en vivo",
+    celebrateOff: "Celebración de gol desactivada"
   });
   Object.assign(T.ar, {
     hlSummary: "📺 ملخّصات الماتشات — تفرّج فكل ماتش تلعب",
     hlIntro: "ملخّصات رسمية د الفيفا لكل ماتش تلعب حتّى دابا. كليكي على شي كارط باش تتفرّج — الفيديو كيتحل هنا.",
     hlLoading: "كيتحمّلو الملخّصات…", hlEmpty: "مازال ماكاين حتّى ملخّص.",
     hlWatchYt: "تفرّج ف يوتيوب", hlClose: "سدّ", hlWatch: "▶ تفرّج فالملخّص", hlGroup: "المجموعة",
-    hlKnockout: "الأدوار الإقصائية", ttsHear: "كليكي باش تسمع"
+    hlKnockout: "الأدوار الإقصائية", ttsHear: "كليكي باش تسمع",
+    goalLabel: "گووول!", celebrateTip: "احتفال بالگول — فيرورك و هتاف ملي شي منتخب يسجل مباشر",
+    celebrateOff: "احتفال بالگول مطفّي"
   });
 
   let lang = lsGet("wc-lang", "en");
@@ -1291,7 +1328,7 @@
   function setLang(l) {
     lang = l; lsSet("wc-lang", l);
     stopGloss();   // drop tooltips; the re-render below rewrites all text to the new language
-    applyI18n(); renderTitle(); renderStatus(); renderThird(); renderBanner(lastMatches); renderBracket(); renderHighlights();
+    applyI18n(); renderTitle(); renderStatus(); renderThird(); renderBanner(lastMatches); renderBracket(); renderHighlights(); setCelebrate(celebrateOn);
     if (lang === "ar") startGloss();
     const sel = document.getElementById("lang"); if (sel) sel.value = l;
   }
@@ -1537,9 +1574,12 @@
       const state = type.state; // "pre" | "in" | "post"
       const venue = comp.venue || ev.venue || {};
       return {
+        id: ev.id,
         home: (home.team && (home.team.shortDisplayName || home.team.displayName)) || "?",
         away: (away.team && (away.team.shortDisplayName || away.team.displayName)) || "?",
         hs: home.score, as: away.score,
+        homeLogo: (home.team && teamLogo(home.team)) || "",
+        awayLogo: (away.team && teamLogo(away.team)) || "",
         state,
         detail: type.shortDetail || type.detail || "",
         date: ev.date,
@@ -2086,6 +2126,118 @@
   hlModal.addEventListener("click", e => { if (e.target === hlModal) closeHighlight(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && hlModal.classList.contains("open")) closeHighlight(); });
 
+  // ---- Goal celebrations: fireworks + chant when a team scores in a live match ----
+  let goalsMap = {}, prevScores = {};
+  let celebrateOn = lsGet("wc-celebrate", "1") === "1";
+  let audioCtx = null;
+
+  async function loadGoals() {
+    try { const r = await fetch("audio/goals.json", { cache: "no-store" }); if (r.ok) goalsMap = await r.json(); }
+    catch (e) { /* file://, or not generated yet — celebrations stay silent */ }
+  }
+
+  // On each poll, compare every live match's score to what we last saw; a rise means a goal.
+  function checkGoals(matches) {
+    for (const m of (matches || [])) {
+      const key = m.id || (m.home + "|" + m.away);
+      const hs = parseInt(m.hs, 10), as = parseInt(m.as, 10);
+      if (!Number.isFinite(hs) || !Number.isFinite(as)) continue;
+      const prev = prevScores[key];
+      if (prev && m.state === "in") {                  // only fire once we've been tracking it live
+        if (hs > prev.hs) celebrateGoal(m.home, m.homeLogo);
+        else if (as > prev.as) celebrateGoal(m.away, m.awayLogo);
+      }
+      prevScores[key] = { hs, as };
+    }
+  }
+
+  function celebrateGoal(team, logo) {
+    if (!celebrateOn) return;
+    launchFireworks();
+    showGoalBanner(team, logo);
+    playCheer();
+    const src = goalsMap[hlNorm(team)];                // chant the team name (let the cheer lead)
+    if (src) setTimeout(() => { try { new Audio(src).play().catch(() => {}); } catch (e) {} }, 450);
+  }
+
+  // ---- Fireworks (single shared canvas + particle pool, so overlapping goals just add bursts) ----
+  let fwParts = [], fwRunning = false, fwUntil = 0, fwCv = null, fwCtx = null;
+  const FW_COLORS = ["#f5c542", "#00d27a", "#ff5d6c", "#4da3ff", "#ff9f1c", "#c46bff", "#ffffff"];
+  function fwBurst(x, y) {
+    const c = FW_COLORS[Math.floor(Math.random() * FW_COLORS.length)];
+    const n = 60 + Math.floor(Math.random() * 40);
+    for (let i = 0; i < n; i++) {
+      const a = (Math.PI * 2 * i) / n, sp = 1.5 + Math.random() * 4.5;
+      fwParts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, c });
+    }
+  }
+  function fwFrame() {
+    const W = fwCv.width, H = fwCv.height;
+    fwCtx.clearRect(0, 0, W, H);
+    for (let i = fwParts.length - 1; i >= 0; i--) {
+      const p = fwParts[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.045; p.vx *= 0.99; p.vy *= 0.99; p.life -= 0.012;
+      if (p.life <= 0) { fwParts.splice(i, 1); continue; }
+      fwCtx.globalAlpha = Math.max(0, p.life);
+      fwCtx.fillStyle = p.c;
+      fwCtx.beginPath(); fwCtx.arc(p.x, p.y, 2.6, 0, Math.PI * 2); fwCtx.fill();
+    }
+    fwCtx.globalAlpha = 1;
+    if (fwParts.length || performance.now() < fwUntil) { requestAnimationFrame(fwFrame); }
+    else { fwRunning = false; fwCv.style.display = "none"; }
+  }
+  function launchFireworks() {
+    if (!fwCv) { fwCv = document.createElement("canvas"); fwCv.id = "fireworks"; document.body.appendChild(fwCv); fwCtx = fwCv.getContext("2d"); }
+    fwCv.width = window.innerWidth; fwCv.height = window.innerHeight; fwCv.style.display = "block";
+    const W = fwCv.width, H = fwCv.height;
+    for (let k = 0; k < 6; k++) setTimeout(() => fwBurst(W * (0.15 + Math.random() * 0.7), H * (0.18 + Math.random() * 0.4)), k * 320);
+    fwUntil = performance.now() + 3600;
+    if (!fwRunning) { fwRunning = true; requestAnimationFrame(fwFrame); }
+  }
+
+  function showGoalBanner(team, logo) {
+    let b = document.getElementById("goalBanner");
+    if (!b) { b = document.createElement("div"); b.id = "goalBanner"; document.body.appendChild(b); }
+    const img = logo ? `<img src="${logo}" alt="" onerror="this.remove()">` : "";
+    b.innerHTML = `<div class="goal-card">${img}<span>${t("goalLabel")}</span><b>${team}</b></div>`;
+    b.classList.remove("show"); void b.offsetWidth; b.classList.add("show");
+  }
+
+  // Procedural crowd-roar via WebAudio — no asset needed, plays once audio is unlocked.
+  function ensureAudioCtx() {
+    if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+    if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+    return audioCtx;
+  }
+  function playCheer() {
+    const ac = ensureAudioCtx(); if (!ac) return;
+    const dur = 1.7, buf = ac.createBuffer(1, Math.floor(ac.sampleRate * dur), ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;   // white noise → crowd
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 850; bp.Q.value = 0.6;
+    const g = ac.createGain(), now = ac.currentTime;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.linearRampToValueAtTime(0.28, now + 0.3);
+    g.gain.linearRampToValueAtTime(0.2, now + 1.0);
+    g.gain.linearRampToValueAtTime(0.0001, now + dur);
+    src.connect(bp); bp.connect(g); g.connect(ac.destination);
+    src.start(now); src.stop(now + dur);
+  }
+
+  function setCelebrate(on) {
+    celebrateOn = on; lsSet("wc-celebrate", on ? "1" : "0");
+    const btn = document.getElementById("celebrateToggle");
+    if (!btn) return;
+    btn.textContent = on ? "🎆" : "🔕";
+    btn.classList.toggle("off", !on);
+    const tip = on ? t("celebrateTip") : t("celebrateOff");
+    btn.setAttribute("data-tip", tip); btn.setAttribute("title", tip);
+  }
+  // First user gesture unlocks WebAudio/HTMLAudio (autoplay policy); clicking the toggle counts too.
+  function unlockAudio() { ensureAudioCtx(); window.removeEventListener("pointerdown", unlockAudio); window.removeEventListener("keydown", unlockAudio); }
+  window.addEventListener("pointerdown", unlockAudio); window.addEventListener("keydown", unlockAudio);
+
   let refreshTimer = null;
   async function load() {
     setStatus("stUpdating", false);
@@ -2105,6 +2257,7 @@
       renderHighlights();
       renderThird();
       renderBanner(matches);
+      checkGoals(matches);
       if (rounds) bracketState.rounds = rounds;
       bracketState.comp = comp;
       renderBracket();
@@ -2137,11 +2290,14 @@
   document.getElementById("brkProjected").addEventListener("click", () => setBracketMode("projected"));
   document.getElementById("lang").addEventListener("change", e => setLang(e.target.value));
   document.getElementById("lang").value = lang;
+  document.getElementById("celebrateToggle").addEventListener("click", () => { ensureAudioCtx(); setCelebrate(!celebrateOn); });
   applyI18n();
+  setCelebrate(celebrateOn);   // sync toggle icon/tooltip
   renderTitle();
   if (lang === "ar") startGloss();
   loadHighlights();
   loadTts();
+  loadGoals();
   load();
   setInterval(tickCountdown, 250);
 </script>
