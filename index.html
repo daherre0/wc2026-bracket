@@ -1868,7 +1868,23 @@
   let highlightsData = null;     // array from highlights.json (null until loaded)
   let hlIndex = {};              // normalised team name -> { group, logo }
   let hlPairs = {};              // "teamA|teamB" (sorted, normalised) -> match, for bracket lookups
-  const hlNorm = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  // ESPN's standings and knockout endpoints disagree on some names (e.g. standings says
+  // "South Korea"/"Iran", FIFA/our data say "Korea Republic"/"IR Iran"), which would drop a
+  // crest or miss a bracket lookup. Collapse known variants to one canonical key.
+  const HL_ALIAS = {
+    korearepublic: "korea", southkorea: "korea",
+    iriran: "iran",
+    czechrepublic: "czechia",
+    turkiye: "turkey",
+    drcongo: "congodr", rdcongo: "congodr", democraticrepublicofthecongo: "congodr",
+    cotedivoire: "ivorycoast",
+    caboverde: "capeverde",
+    bosniaandherzegovina: "bosnia", bosniaherzegovina: "bosnia"
+  };
+  const hlNorm = s => {
+    const k = (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    return HL_ALIAS[k] || k;
+  };
   const hlPairKey = (a, b) => [hlNorm(a), hlNorm(b)].sort().join("|");
 
   // Find the highlight for a knockout tie by its (unordered) team pair. ESPN gives the
