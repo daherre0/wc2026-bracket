@@ -1166,8 +1166,13 @@
     };
     while (i < toks.length) {
       if (toks[i].num) {                          // a digit run → Arabic-Indic + spoken reading
-        const g = numberGloss(text.slice(toks[i].s, toks[i].e));
-        if (g) wrap(toks[i].s, toks[i].e, g.disp, g.tip);
+        // …unless it's embedded in Latin letters (arabizi like "a7sen", "l-3alam"), where the
+        // digit stands for a sound and must stay as a Western numeral — never converted.
+        const before = text[toks[i].s - 1] || "", after = text[toks[i].e] || "";
+        if (!/[A-Za-z]/.test(before) && !/[A-Za-z]/.test(after)) {
+          const g = numberGloss(text.slice(toks[i].s, toks[i].e));
+          if (g) wrap(toks[i].s, toks[i].e, g.disp, g.tip);
+        }
         i++; continue;
       }
       // up to 4 consecutive Arabic tokens, for multi-word expressions (longest match first)
