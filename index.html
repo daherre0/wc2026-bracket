@@ -1072,27 +1072,30 @@
   // scroll areas where a CSS ::after tooltip would be clipped or hidden.
   let glossPop = null;
   function hideGlossPop() { if (glossPop) glossPop.style.display = "none"; }
-  function showGlossPop(el) {
+  function showGlossPop(el, ev) {
     const txt = el.getAttribute("data-gloss");
     if (!txt) return;
     if (!glossPop) { glossPop = document.createElement("div"); glossPop.className = "gloss-pop"; document.body.appendChild(glossPop); }
-    glossPop.textContent = txt;       // newlines + white-space:pre-line render the 3 lines
+    glossPop.textContent = txt;       // newlines + white-space:pre-line render the lines
     glossPop.style.display = "block";
     const r = el.getBoundingClientRect();
     const pr = glossPop.getBoundingClientRect();
-    let top = r.top - pr.height - 9;
-    if (top < 6) top = r.bottom + 9;  // flip below when there's no room above (e.g. the title)
+    let top = r.top - pr.height - 9;   // preferred: above the word, clear of the cursor
+    if (top < 6) {                     // no room above (e.g. the title) → drop it below,
+      const cursorY = ev ? ev.clientY : r.bottom;   // but clear the help-cursor so its "?"
+      top = Math.max(r.bottom + 9, cursorY + 26);   // glyph never covers the tooltip text
+    }
     let left = r.left + r.width / 2 - pr.width / 2;
     left = Math.max(6, Math.min(left, window.innerWidth - pr.width - 6));
     glossPop.style.top = top + "px";
     glossPop.style.left = left + "px";
   }
   function glossTarget(e) { return e.target && e.target.closest ? e.target.closest(".gloss") : null; }
-  document.addEventListener("mouseover", e => { const g = glossTarget(e); if (g) showGlossPop(g); });
+  document.addEventListener("mouseover", e => { const g = glossTarget(e); if (g) showGlossPop(g, e); });
   document.addEventListener("mouseout", e => { if (glossTarget(e)) hideGlossPop(); });
   document.addEventListener("click", e => {   // tap-to-toggle for touch devices
     const g = glossTarget(e);
-    if (g) { e.preventDefault(); if (glossPop && glossPop.style.display === "block") hideGlossPop(); else showGlossPop(g); }
+    if (g) { e.preventDefault(); if (glossPop && glossPop.style.display === "block") hideGlossPop(); else showGlossPop(g, e); }
     else hideGlossPop();
   });
   window.addEventListener("scroll", hideGlossPop, true);
@@ -1686,7 +1689,24 @@
       // matchups; R16 shows which two R32 winners feed each tie; QF+ are placeholders.
       const map = r32MatchMap(rounds);
       const tbdRow = `<div class="g-row placeholder"><span class="nologo"></span><span class="nm">${t("tbd")}</span></div>`;
-      const feederRow = m => `<div class="g-row placeholder"><span class="nologo"></span><span class="nm">› ${shortMatch(map[m])}</span></div>`;
+      // Winner of a FINISHED tie is a confirmed advancer (not a projection), so show the
+      // real team in the slot it feeds; otherwise show which two teams could fill it.
+      const finishedWinner = ev => {
+        if (!ev || (((ev.status || {}).type || {}).state) !== "post") return null;
+        const w = (ev.competitions[0].competitors || []).find(x => x.winner === true);
+        const tt = w && w.team;
+        return tt ? { name: tt.shortDisplayName || tt.displayName || "?", logo: tt.logo || "" } : null;
+      };
+      const feederRow = m => {
+        const w = finishedWinner(map[m]);
+        if (w) {
+          const logo = w.logo
+            ? `<img src="${w.logo}" alt="" onerror="this.outerHTML='<span class=&quot;nologo&quot;></span>'">`
+            : '<span class="nologo"></span>';
+          return `<div class="g-row win">${logo}<span class="nm">${w.name}</span></div>`;
+        }
+        return `<div class="g-row placeholder"><span class="nologo"></span><span class="nm">› ${shortMatch(map[m])}</span></div>`;
+      };
       const placeholderBox = (ev, inner) => `<div class="game">${inner}${ev ? metaHtml(ev) : ""}</div>`;
 
       const colR32 = `<div class="round-col"><div class="rc-title">${roundName(rounds[0].name)}</div><div class="matches">${
