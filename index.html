@@ -994,11 +994,11 @@
     const trip = (ascii.length <= 4 && v <= 9999)
       ? spellNumber(v)
       : nJoin(ascii.split("").map(d => d === "0" ? N_ZERO : N_ONES[+d])); // huge: digit by digit
-    return { disp: toArabicDigits(ascii), tip: trip };
+    return { disp: toArabicDigits(ascii), tip: trip.concat([ascii]) }; // 4th line: the plain number
   }
   function glossEscHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function glossEscAttr(s) { return glossEscHtml(s).replace(/"/g, "&quot;"); }
-  function glossTip(g) { return glossEscAttr("🗣 " + g[0] + "\n⌨ " + g[1] + "\n→ " + g[2]); }
+  function glossTip(g) { return glossEscAttr("🗣 " + g[0] + "\n⌨ " + g[1] + "\n→ " + g[2] + (g[3] != null ? "\n🔢 " + g[3] : "")); }
   // Wrap known Darija words/expressions in a text string; returns HTML, or null if nothing matched.
   function glossifyText(text) {
     const toks = []; let m; GLOSS_TOKEN.lastIndex = 0;
