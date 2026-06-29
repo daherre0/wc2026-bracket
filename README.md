@@ -79,8 +79,9 @@ heading rather than a group.
 
 ## Regenerating the Darija audio
 
-Each glossary word has a pre-generated pronunciation clip (Microsoft's `ar-MA-JamalNeural`
-voice) under `audio/`, mapped by `audio/manifest.json`. Same reasoning as the highlights:
+Each glossary word **and number** has a pre-generated pronunciation clip (Microsoft's
+`ar-MA-JamalNeural` voice) under `audio/`, mapped by `audio/manifest.json`. Numbers reuse the
+page's own Darija speller (run via node at build time) so the audio matches the tooltip. Same reasoning as the highlights:
 a static page can't call a paid TTS service at runtime, so the audio is snapshotted and
 committed. After adding glossary entries, regenerate (it skips clips already made) and commit:
 
