@@ -674,7 +674,12 @@
   const SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
   const QUALIFY_SPOTS = 8; // best 8 of 12 third-placed teams reach the Round of 32
   const REFRESH_LIVE = 20000;    // poll every 20s while matches are in progress
-  const REFRESH_IDLE = 300000;   // when nothing is live, just check every 5 min for kickoffs
+  const REFRESH_IDLE = 300000;   // when nothing's live and no kickoff is near, check every 5 min
+  // A match window keeps us in fast-poll mode even before ESPN flips the match to "in", so the
+  // refresh auto-starts at kickoff. The window opens a little before kickoff and stays open long
+  // enough to cover stoppage time, half-time, plus extra time + penalties for a knockout draw.
+  const PRE_KICK_MS = 5 * 60 * 1000;        // start fast-polling 5 min before kickoff
+  const MAX_MATCH_MS = 3 * 60 * 60 * 1000;  // a match can run ~3h (90' + ET + penalties + stoppage)
 
   // ---- i18n: English / Español / Moroccan Arabic (Darija) --------------------
   const T = {
@@ -2227,12 +2232,21 @@
     }
   }
 
+  // Pick the goal chant for the team in the reader's chosen language, falling back to
+  // another language's clip (then the legacy flat manifest) so a goal is never silent.
+  function goalChantSrc(team) {
+    const key = hlNorm(team);
+    const byLang = l => (goalsMap[l] && typeof goalsMap[l] === "object") ? goalsMap[l][key] : null;
+    return byLang(lang) || byLang("en") || byLang("es") || byLang("ar")
+      || (typeof goalsMap[key] === "string" ? goalsMap[key] : null);  // legacy single-language manifest
+  }
+
   function celebrateGoal(team, logo) {
     if (!celebrateOn) return;
     launchFireworks();
     showGoalBanner(team, logo);
     playCheer();
-    const src = goalsMap[hlNorm(team)];                // chant the team name (let the cheer lead)
+    const src = goalChantSrc(team);                   // chant the team name (let the cheer lead)
     if (src) setTimeout(() => { try { new Audio(src).play().catch(() => {}); } catch (e) {} }, 450);
   }
 
@@ -2395,6 +2409,26 @@
   }
 
   let refreshTimer = null;
+
+  // Decide the next poll delay from today's fixtures so refreshing tracks the match schedule:
+  // fast (REFRESH_LIVE) whenever a match is live OR we're inside any match's kickoff window;
+  // otherwise sleep just long enough to wake right as the next kickoff window opens.
+  function nextRefreshDelay(matches, liveCount) {
+    const now = Date.now();
+    if (liveCount > 0) return REFRESH_LIVE;
+    let nextWindowIn = Infinity;
+    for (const m of (matches || [])) {
+      const k = Date.parse(m.date);
+      if (!Number.isFinite(k)) continue;
+      // Inside this match's window (from PRE_KICK before kickoff to MAX_MATCH after)? Poll fast.
+      if (now >= k - PRE_KICK_MS && now <= k + MAX_MATCH_MS) return REFRESH_LIVE;
+      const windowOpensIn = (k - PRE_KICK_MS) - now;     // time until this match's window opens
+      if (windowOpensIn > 0) nextWindowIn = Math.min(nextWindowIn, windowOpensIn);
+    }
+    // Land the next poll on the upcoming window, but never sleep past the idle cap or below live cadence.
+    return Math.max(REFRESH_LIVE, Math.min(REFRESH_IDLE, nextWindowIn));
+  }
+
   async function load() {
     setStatus("stUpdating", false);
     let nextDelay = REFRESH_IDLE;
@@ -2422,8 +2456,8 @@
       uiState.live = matches.filter(m => m.state === "in").length;
       uiState.updatedAt = new Date();
       setStatus(uiState.live ? "stLiveN" : "stIdle", false, uiState.live);
-      // Only keep refreshing quickly while matches are actually being played.
-      nextDelay = uiState.live > 0 ? REFRESH_LIVE : REFRESH_IDLE;
+      // Keep refreshing quickly while matches are live or a kickoff window is open/imminent.
+      nextDelay = nextRefreshDelay(matches, uiState.live);
     } catch (err) {
       console.error(err);
       setStatus("stOffline", true);
