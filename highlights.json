@@ -574,5 +574,31 @@
   "as": 0,
   "videoId": "PmevGCkUtM8",
   "title": "Resumen del partido | México 2-0 Sudáfrica | Copa Mundial de la FIFA 2026™"
+ },
+ {
+  "home": "Brazil",
+  "away": "Japan",
+  "hs": 2,
+  "as": 1,
+  "videoId": "0wGLeNHWslY",
+  "title": "Brasil 2-1 Japón | Resumen (DSports)",
+  "embeddable": false
+ },
+ {
+  "home": "Germany",
+  "away": "Paraguay",
+  "hs": 1,
+  "as": 1,
+  "videoId": "lq3o-vf5o40",
+  "title": "Paraguay Eliminate Germany On Penalties | FIFA World Cup 2026"
+ },
+ {
+  "home": "Netherlands",
+  "away": "Morocco",
+  "hs": 1,
+  "as": 1,
+  "videoId": "N12t-4Aqgfc",
+  "title": "Países Bajos 1-1 Marruecos | Resumen (DSports)",
+  "embeddable": false
  }
 ]
