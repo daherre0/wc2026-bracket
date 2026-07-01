@@ -97,6 +97,10 @@
   .live-match:first-of-type { border-top: none; }
   .live-match .teams { display: flex; align-items: center; gap: 8px; }
   .live-match .score { font-weight: 700; font-variant-numeric: tabular-nums; }
+  /* Darija renders the score digits as Arabic-Indic numerals (bidi class AN). The neutral
+     dash between two AN numbers otherwise resolves RTL and reverses "٢ – ١" → "١ – ٢",
+     swapping home/away. Isolating each number keeps the score in home – away order. */
+  .live-match .score .gloss { unicode-bidi: isolate; }
   .live-pill {
     font-size: 10px; font-weight: 700; color: #fff;
     background: var(--danger); border-radius: 20px; padding: 2px 8px;
