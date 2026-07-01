@@ -51,7 +51,10 @@ TEAMS = {
     "korea republic": "Korea Republic", "mexico ": "Mexico",
 }
 
-SCORE_RE = re.compile(r"^\s*(.+?)\s+(\d+)\s*-\s*(\d+)\s+(.+?)\s*$")
+# "Team A 3-3 Team B" — and knockout ties decided on penalties, which FIFA writes with
+# the shootout result glued around the regulation score, e.g. "Países Bajos (2)1-1(3) Marruecos".
+# The (n) groups are optional and non-capturing so hs/as stay the regulation goals.
+SCORE_RE = re.compile(r"^\s*(.+?)\s+(?:\(\d+\))?(\d+)\s*-\s*(\d+)(?:\(\d+\))?\s+(.+?)\s*$")
 
 
 def strip(s):
